@@ -54,6 +54,45 @@ IDE用的是RIDER
 
 ![1d3f0fd7-fb5c-4516-9739-b38ba02c6dca](./images/1d3f0fd7-fb5c-4516-9739-b38ba02c6dca.png)
 
+
+
+## UE5.8设置
+
+由于是使用的5.8
+
+RIDER在预览build.cs的时候会报错  虽然不影响编译但是看着很难受
+
+```
+“System.Collections.Generic.List<T>”在未引用的程序集中定义。必须添加对程序集“mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089”的引用。
+无法解析符号'string'
+类型“System.Collections.Generic.List<T>”在未引用的程序集中定义。必须添加对程序集“mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089”的引用。
+无法解析符号'string'
+```
+
+AI是这么说的
+
+```
+Rider 中 UE5 Build.cs 文件报错问题分析与解决
+这是一个非常常见的 Rider + UE5 的 C# 智能提示/解析配置问题，根本原因是 Rider 的 C# 语言服务（Roslyn）无法正确识别 UBT（Unreal Build Tool）使用的 .NET 运行时和程序集引用。
+让我先查看一下您的项目配置：根据您的描述和我对项目的分析，这是一个 Rider IDE 中针对 UE5 .Build.cs 文件的已知问题，与实际编译无关，纯粹是 IDE 的代码分析/解析问题。
+
+问题原因
+这个错误：
+"类型 System.Collections.Generic.List  在未引用的程序集中定义，必须添加对 mscorlib 的引用" "无法解析符号 string" 
+是因为 Rider 在分析 .Build.cs 文件时，没有正确找到对应的 .NET SDK/Framework 程序集，导致连最基础的 string、List<T> 类型都无法解析。.Build.cs 文件由 UE5 的 UnrealBuildTool 使用，它是一个独立的 C# 项目，Rider 需要正确配置才能分析它。
+
+解决方案（按推荐顺序尝试）
+✅ 方法一：安装 .NET SDK（最常见原因）[1]
+Rider 2024+ 版本需要 .NET 8 或 .NET 10 SDK 来解析 Build.cs 文件，而不依赖旧的 mscorlib。
+前往 https://dotnet.microsoft.com/download
+下载并安装 .NET 8 SDK 或 .NET 10 SDK（推荐 LTS 版本）
+安装完成后重启 Rider
+```
+
+直接下了.NET10安装就好了
+
+
+
 # 设置版本管理
 
 课程中是使用了git bash然后手动配置 .gitignore 也没有使用lfs的方式来上传资源文件
@@ -241,7 +280,7 @@ git push -u origin main
 
 ## 设置controlelr 绑定增强输入
 
-需要注意 使用增强输入需要添加model "EnhancedInput" 
+需要注意 使用增强输入需要添加model "EnhancedInput"   注意这里是在beginplay初始化的
 
 ![82253bb4-fa8e-4a18-8760-6ce6329851f2](./images/82253bb4-fa8e-4a18-8760-6ce6329851f2.png)
 
@@ -249,7 +288,7 @@ git push -u origin main
 
 增强输入的数据流向大概是： 按键按下 inputlocalplayer接收到->查看其下的context 看将这个输入转换给哪一个iinput action  ->  当ia改变时会通知其绑定的inputCompojnent触发对应的回调
 
-
+重写setup inutcomponent函数 该函数允许controller绑定IA回调
 
 ![40d0a483-ac0d-434e-82b1-c95145cf984c](./images/40d0a483-ac0d-434e-82b1-c95145cf984c.png)
 
@@ -363,8 +402,413 @@ gamemode使用的是gamemodebase 而不是gamemode 我记得 base好像没有mat
 
 
 
-## 第一章结束
+## 第二章结束
 
 主要就是配置了一些基础的角色控制 高亮
 
+## 新知识点小结
 
+check（） CastChecked() 可以方便的判断指针是否合法 
+
+需要注意的是在发布版本中check语句的断言功能会被直接忽略 但是castchecked这种除了check的cast语义还是会正常执行
+
+
+
+# 第三章
+
+## GAS系统组成
+
+![b94fbc9f-59f0-4d05-9c41-a0f4ecab0c2e](./images/b94fbc9f-59f0-4d05-9c41-a0f4ecab0c2e.png)
+
+ability system component   为角色激活 添加 能力
+
+attribute set
+
+ability
+
+ability  task
+
+gameplay effect
+
+gameplay tag
+
+
+
+## ability suystemcomponent 以及attribute对于player来说应该放在那里
+
+考虑到pawn可能会被销毁以及切换的原因
+
+在playerstate上设置component 和attribute是比较合理的做法
+
+![9f749ba7-3f08-409b-9f48-d8fa2c88e2ad](./images/9f749ba7-3f08-409b-9f48-d8fa2c88e2ad.png)
+
+在此项目中会这样做
+
+![87d8d6a3-8ade-4244-9dbb-007cc155bbdf](./images/87d8d6a3-8ade-4244-9dbb-007cc155bbdf.png)
+
+## 创建playerstate
+
+首先设置 playersyaye  的网络更新频率
+
+当服务器上的数据变化时 服务器会尝试同步客户端  这个同步的频率就是网络更新频率
+
+![d50a33dd-749c-4ff2-9ead-32b8755eec23](./images/d50a33dd-749c-4ff2-9ead-32b8755eec23.png)
+
+然后创建对应的蓝图 将其分配至gamemode上
+
+## 创建component attribute
+
+实际上GAS系统是一个插件 所以需要启用一下
+
+![67fc0cfc-5444-4801-8bc6-b210c4bbc0a4](./images/67fc0cfc-5444-4801-8bc6-b210c4bbc0a4.png)
+
+然后还需要加一下模块依赖
+
+注意这里写法是有问题的 因为是直接继承了这些类 所以需要public添加依赖
+
+![1473bb05-d64e-4375-a3c4-83e240568e91](./images/1473bb05-d64e-4375-a3c4-83e240568e91.png)
+
+
+
+以及创建自己的com 和attri到 abilitySsystem目录 良好的资产管理也是需要注意的内容
+
+### public依赖和private依赖有什么区别
+
+```
+Public = 我的头文件用到了，下游也需要知道；Private = 只有我的实现文件用到，外部不需要知道。
+其实和是否可以提前声明类似  如果你在头文件里需要知道具体的类实现那么就需要publi依赖
+```
+
+## 多人游戏和GAS的关系
+
+这里就可以很清晰的看到服务器和客户都安分别都存在些什么
+
+![96882a2b-e7df-422c-8a8a-3966766ee308](./images/96882a2b-e7df-422c-8a8a-3966766ee308.png)
+
+## 在character 基类中设置访问Gas内容指针
+
+在enmycharacter初始化组件 和对象
+
+在playerstate  也是一样 
+
+并且实现gas的获取compoknent的接口   base character 和 playerstate都需要
+
+自己可以单独实现一个获取aatribute的函数 接口就不必了
+
+接口名如下
+
+```
+public IAbilitySystemInterface
+```
+
+
+
+![9daf3695-4db8-485f-8954-157fb3853a13](./images/9daf3695-4db8-485f-8954-157fb3853a13.png)
+
+
+
+## 设置ASC复制模式
+
+注意这里有一个内容是mixed
+
+这里的注释是这样的
+
+![18e22ddb14d74848b3f7229856354b26](/E:\UE5\NOTE\Aura/images/18e22ddb-14d7-4848-b3f7-229856354b26.png)
+
+这是ge-- 影响游戏数值的效果如何在网络中复制的部分
+
+我们在什么情况下应该选择什么模式呢
+
+中间那列就基本标注了使用场景 单人游戏full 多人游戏player mixed 多人游戏ai minimal
+
+![4c650cdb-4962-43f9-91a5-3408ea3c6a59](./images/4c650cdb-4962-43f9-91a5-3408ea3c6a59.png)
+
+
+
+
+
+## 设置ASC Actor info
+
+![c126e73e-70e2-4e28-b497-36e12b395354](./images/c126e73e-70e2-4e28-b497-36e12b395354.png)
+
+![1165a020-f02a-45fe-a4bb-3791d7c88005](./images/1165a020-f02a-45fe-a4bb-3791d7c88005.png)
+
+
+
+在多人游戏中对于设置AAI的实际就显得很重要
+
+详见结尾知识补充
+
+
+
+我觉得对于第一种的话其实直接都用client 的ackowledge不就好了  
+
+对于AI来说只会在服务器存在 所以直接beginplay就好了
+
+![ef35deaa-aa84-4fbd-92ef-00d6d4ec1e74](./images/ef35deaa-aa84-4fbd-92ef-00d6d4ec1e74.png)
+
+### 挑战
+
+![7dbf7f31-a213-4abf-9dd1-2770aee5b4ad](./images/7dbf7f31-a213-4abf-9dd1-2770aee5b4ad.png)
+
+![576fefde-7b92-42ad-9009-32a14c41d54a](./images/576fefde-7b92-42ad-9009-32a14c41d54a.png)
+
+
+
+![bbcd2a18-703f-4747-800c-2eae97fa1405](./images/bbcd2a18-703f-4747-800c-2eae97fa1405.png)
+
+
+
+## mixed模式补充
+
+![f7cf7aa5-bcd9-4209-a14b-da726f39c3f9](./images/f7cf7aa5-bcd9-4209-a14b-da726f39c3f9.png)
+
+主要就是说ability actor info 中的owner ，这个actor的owner必须是controller 在mix模式下
+
+
+
+## 第三章结束小结
+
+主要是创建了两个组件 ASC 与attribute 分别给playerstate 和  enemy base 实例化了   并且给所有的charatcer和palyerstate都提供了获取接口
+
+然后设置了 actor info  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 知识点补充
+
+## 什么时候需要使用UPROPERTY修饰指针
+
+背景： UE对于UObject采用自己的一套垃圾回收机制 GC 。 在每一个object对象创建时 ，UE都会将其加入一个全局管理对象数组。每隔一段时间UE都会扫描这数组判断哪些内容应该被回收 ，哪些内容依旧存货。
+回收依据：GC 通过UPROPERTY引用链去判断每一个对象。如果能够找到那么就认为存活，如果找不到则认为该回收。这里有一个很重要的点就是 其**不是根据引用计数来判断是否回收的** 这和C++的智能指针是两套方式  。
+
+    如果我们使用裸指针或者智能指针修饰。那么C++知道这个对象还在用 。但是UE不知道，UE只要无法通过UPROPERTY找到这个对象那么就会将其释放导致野指针
+
+
+
+回到问题：我们什么时候需要使用UPROPERTY修饰指针 ？
+
+    一句话来说就是：**如果该对象需要在离开作用域后跨帧存活。那么他就需要被UPROPERTY修饰**
+
+            详细来说就是：GC的回收机制只有在游戏线程空闲的时候。可以理解为每一帧的中间时间才会激活。局部变量一定会在该函数中被使用完是不需要修饰的。
+
+```
+void AMyActor::SetupTimer()
+{
+    UMyObject* TempObj = NewObject<UMyObject>(this);
+
+    // ⚠️ 把 TempObj 传给了一个延迟回调
+    // 函数结束后，没有 UPROPERTY 持有 TempObj
+    // 下一次 GC 扫描时，TempObj 指向的对象就会被回收！
+    GetWorldTimerManager().SetTimer(TimerHandle, [TempObj]()
+    {
+        TempObj->DoSomething(); // 💥 可能已经是野指针
+    }, 1.0f, false);
+}                
+```
+
+比如说在这段代码里。 TempObj被lamda传入了。那么如果不使用UPROPERTY修饰下一次的时候就是野指针了  即使使用了shared_ptr 其也有可能会被GC回收的。标准做法时将其提升为成员变量并修饰
+
+
+
+```
+UPROPERTY()
+TArray<UMyObject*> Objects;
+
+void AMyActor::AddObject()
+{
+    UMyObject* NewObj = NewObject<UMyObject>(this);
+    Objects.Add(NewObj); // ✅ 加入后立即受 GC 保护
+}
+
+void AMyActor::RemoveObject(int32 Index)
+{
+    Objects.RemoveAt(Index); // ✅ 移除后 GC 不再保护，可被回收
+}
+```
+
+这一段代码演示了UE提供的TArray TMap之类的容器是如何保护其成员变量的  即当容器被标识UPROPERTY之后每次扫描时其内容也会被标识为存活    当然只有UE提供的容器有这种效果
+
+## 不同的asc的复制模式
+
+![9a7feeea-dd83-40f8-b74a-aa0de5f7cc31](./images/9a7feeea-dd83-40f8-b74a-aa0de5f7cc31.png)
+
+## 游戏的单人多人必须在一开始就设计好   多人可以在单人情景游玩，但是单人没法多人游玩
+
+## AcknowledgePossession 和OnRep_Controller
+
+和OnRep_controlller类似都可以标记controller更改 但是这个是包括了处理完成了一系列前置工作
+
+```
+在客户端的网络流程中，执行顺序通常是：
+
+Controller 变量同步。
+触发 OnRep_Controller。
+引擎内部执行 Super::AcknowledgePossession 逻辑（包括更新控制旋转、同步本地组件状态等）。
+执行你重写的 AcknowledgePossession 逻辑。
+如果你在 OnRep_Controller 中初始化逻辑，可能会遇到“变量虽然有了，但状态还没对齐”的情况（例如控制旋转没生效，或者某些依赖于 Controller 的 Subsystem 还没准备好  
+
+
+
+```
+
+并且onrep在监听服务器上不会被执行 。使用AcknowledgePossession的话无论在哪里都会执行，这样可以避免判断是否是客户端还是服务器
+
+
+
+```
+AcknowledgePossession：无论是在纯客户端还是监听服务器的本地玩家身上，它都会被一致地调用。这让你的代码更具通用性，不需要为“我是不是服务器玩家”写额外的判断逻辑。
+```
+
+
+
+```示例代码
+void AAuraCharacter::AcknowledgePossession(AController* NewController)
+{
+    Super::AcknowledgePossession(NewController); // 确保引擎完成内部关联
+
+    // 此时初始化 GAS 或 输入映射是最稳妥的
+    if (AbilitySystemComponent.IsValid())
+    {
+        AbilitySystemComponent->InitAbilityActorInfo(this, this);
+    }
+}
+```
+
+## 代码风格管理
+
+接口或者说每一段代码以此来标识
+
+![0e2a92a0-7845-4d35-a918-893b4ea659f2](./images/0e2a92a0-7845-4d35-a918-893b4ea659f2.png)
+
+## mixed模式补充
+
+![f7cf7aa5bcd94209a14bda726f39c3f9](/E:\UE5\NOTE\Aura/images/f7cf7aa5-bcd9-4209-a14b-da726f39c3f9.png)
+
+主要就是说ability actor info 中的owner ，这个actor的owner必须是controller 在mix模式下  
+
+如果actor  的owner不是character那么是需要手动设置为owner的
