@@ -458,6 +458,10 @@ gameplay tag
 
 ## 创建component attribute
 
+注意 成员变量类型是父类 但是实际上生成的时候使用的是 Aura类
+
+
+
 实际上GAS系统是一个插件 所以需要启用一下
 
 ![67fc0cfc-5444-4801-8bc6-b210c4bbc0a4](./images/67fc0cfc-5444-4801-8bc6-b210c4bbc0a4.png)
@@ -551,6 +555,22 @@ public IAbilitySystemInterface
 
 ![7dbf7f31-a213-4abf-9dd1-2770aee5b4ad](./images/7dbf7f31-a213-4abf-9dd1-2770aee5b4ad.png)
 
+
+
+
+
+
+
+注意这里的代码是有问题的。在possessedby的时候只能说明pawn被controller控制了。这时候controller是有playerstate  的但是还没有设置给pawn 所以应该直接从controller获取playerstate而不是从pawn
+
+但是我看教程里就是直接从pawn获取的就有点迷惑
+
+
+
+喔喔看了一下，写道base去了神了。就写到polayercharacter就好 其实是两种都可以的
+
+![e4720f7f-4fb1-4447-9568-c487f4542a5c](./images/e4720f7f-4fb1-4447-9568-c487f4542a5c.png)
+
 ![576fefde-7b92-42ad-9009-32a14c41d54a](./images/576fefde-7b92-42ad-9009-32a14c41d54a.png)
 
 
@@ -572,6 +592,200 @@ public IAbilitySystemInterface
 主要是创建了两个组件 ASC 与attribute 分别给playerstate 和  enemy base 实例化了   并且给所有的charatcer和palyerstate都提供了获取接口
 
 然后设置了 actor info  
+
+
+
+# 第四章
+
+## 属性集
+
+一个ASC可以拥有多个不同类型的属性集
+
+当然全部属性放到一起也没有问题。甚至可以全部类都用一个属性集。因为这个其实不占用多少内存
+
+
+
+使用GE的一个好处就是有客户端预测，在很卡的情况下也可以立刻显示数值变化
+
+![c5bc6a89-b1f4-45ff-9e4d-904c98889d81](./images/c5bc6a89-b1f4-45ff-9e4d-904c98889d81.png)
+
+一个Attribute 是一个FGameplayAttributedata类型的数据，他们多个被attribute set管理 
+
+![46e3c0da-b5dd-4f56-9bdc-6cab2566ad60](./images/46e3c0da-b5dd-4f56-9bdc-6cab2566ad60.png)
+
+
+
+## 为属性集添加属性
+
+![6bf47f93-1a2d-416e-8a36-df2f6bcd163c](./images/6bf47f93-1a2d-416e-8a36-df2f6bcd163c.png)
+
+我们在收到onrep后首先是需要通知GAS
+
+![d0661c43-77bd-45eb-acb5-eb6621e5a9ac](./images/d0661c43-77bd-45eb-acb5-eb6621e5a9ac.png)
+
+然后设置可复制变量。让其不管是否数据一直都继续同步   
+
+因为可能有些技能是设置触发的，而不是变化触发  比如说想对设置这个行为做出反应
+
+![a0cb5f56-97dc-44e6-b588-c91c6f581866](./images/a0cb5f56-97dc-44e6-b588-c91c6f581866.png)
+
+
+
+
+
+### 挑战
+
+注意流程
+
+1. 创建FGameplayAtttributedata 
+
+2. 标识可复制 然后创建onrep函数
+
+3. 实现onrep函数，函数内调用GameplayAttribute_REPNOTIFY 宏来进行客户端预测
+
+4. 在getlifeTime函数里添加该属性为可复制
+
+5. ```
+   按照这个做一下宏 然后为每一个属性都加上对应的获取函数，为什么可以看下一小节
+   
+   
+   ```
+
+```
+
+#define ATTRIBUTE_ACCESSORS(ClassName, PropertyName) \
+ *    GAMEPLAYATTRIBUTE_PROPERTY_GETTER(ClassName, PropertyName) \
+ *    GAMEPLAYATTRIBUTE_VALUE_GETTER(PropertyName) \
+ *    GAMEPLAYATTRIBUTE_VALUE_SETTER(PropertyName) \
+ *    GAMEPLAYATTRIBUTE_VALUE_INITTER(PropertyName)
+
+```
+
+![d9642723-2fbc-4181-b5fc-2c06aad65302](./images/d9642723-2fbc-4181-b5fc-2c06aad65302.png)
+
+## GAMEPLAYATTRIBUTE_REPNOTIFY 宏说明
+
+这里说是用来帮助进行客户端预测的
+
+问题是。这个是怎么帮助客户端进行预测的。
+
+
+
+![4088a7eb-50aa-4a43-91d8-dcbef41ee1f1](./images/4088a7eb-50aa-4a43-91d8-dcbef41ee1f1.png)
+
+
+
+这里就需要提到之前PPT上说的
+
+base value 了   这个base可不是出生基础值  而是网络预测基础值，即服务器验证OK的基础值。
+
+
+
+![469eaf50-3991-45b4-b09e-4f62d20a3fd4](./images/469eaf50-3991-45b4-b09e-4f62d20a3fd4.png)
+
+流程大概是这样的 这里可能需要一点本地预测的知识才能看明白
+
+比如说客户端做了一个数值操作 100->80 这时候他本地预测了 current value已经变为了80 然后像server发送请求 说我变为了 80 
+
+此时如果服务器认为OK 那么在onrep收到的就是90 这个宏会去设置base为80
+
+
+
+如果认为不对。服务器会将他认为正确的值返回比如说 90 那么此时这个宏也会将base设置为90  如果后续没有客户端预测那么current也会变为90 如果有后续预测那么会在修正后的base基础上进行预测
+
+
+
+那么如果不写这个宏会怎么样。首先就是服务器永远无法纠正客户端预测错误的值。他只会在错误上越走越远
+
+## attribute accessor
+
+虽然我们知道都是使用GE来修改数据 但是我们有时候需要获取数据 
+
+所以可以定义这样的宏 来方便我们获取数据 和attribute
+
+注意gameplayAttribute是一个gameplayAttributeData里的属性   其好像是一个属性的标识来的  因为data直接比数据会不同 
+
+所以需要一个唯一标识符 就是gameplayAttribute   可以通过GAS提供的宏来方便的拿到
+
+
+
+需要注意一下init 和set 的区别    init把base 和current值都设置为了一致    而set值设置了base
+
+![3add66f5-edf2-4215-868b-4f71dcf2fca6](./images/3add66f5-edf2-4215-868b-4f71dcf2fca6.png)
+
+
+
+所以可以直接按照他的建议来生成一下宏 然后给每一个属性都加上
+
+这些宏记得放到public去，因为宏是文本替换嘛。所以你如果放在private那么其他的类里是用不了的
+
+![7a29100f-dbc6-46f5-bc95-cd75404b5093](./images/7a29100f-dbc6-46f5-bc95-cd75404b5093.png)
+
+
+
+### 挑战
+
+![bcc63430-44f2-4b08-8541-a3f22ff61974](./images/bcc63430-44f2-4b08-8541-a3f22ff61974.png)
+
+## 知识补充里有补充outer以及attributeSet是如何找到或者被ASC找到的
+
+## 添加能直接修改attribute的actor  不久之后会换成ge
+
+创建一个有sphereComponent static mesh 的actor
+
+然后设置其on / end overlap委托回调 
+
+
+
+这里使用const_cast来吧一个const对象转化成了可编辑对象。这可不行学，作为了解
+
+![e5af6012-dc3b-4e08-8d5d-73f806efc98d](./images/e5af6012-dc3b-4e08-8d5d-73f806efc98d.png)
+
+
+
+可以看到底层源码其实就是在一个个轮询ASC所管理的attributes 来看其是不是给定的那个UClass的子类
+
+![3800ccfc-3b84-49f8-bb3a-34f5f06f554c](./images/3800ccfc-3b84-49f8-bb3a-34f5f06f554c.png)
+
+如果是的话就返回
+
+
+
+### 挑战
+
+![eec583c3-f418-4465-9d01-6ee2ff734591](./images/eec583c3-f418-4465-9d01-6ee2ff734591.png)
+
+
+
+
+
+## 第四章小结
+
+1. 了解了添加attribute的5个步骤
+
+2. 学习了是如何使用GameplayAttribute_REPNOTIFY来实现客户端本地预测的
+
+3. 学习了ue中ASC是如何获取其管理的atrributeSet 的
+
+4. 学习了UE的反射机制 uclass  当然只是皮毛
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -706,21 +920,21 @@ public IAbilitySystemInterface
 背景： UE对于UObject采用自己的一套垃圾回收机制 GC 。 在每一个object对象创建时 ，UE都会将其加入一个全局管理对象数组。每隔一段时间UE都会扫描这数组判断哪些内容应该被回收 ，哪些内容依旧存货。
 回收依据：GC 通过UPROPERTY引用链去判断每一个对象。如果能够找到那么就认为存活，如果找不到则认为该回收。这里有一个很重要的点就是 其**不是根据引用计数来判断是否回收的** 这和C++的智能指针是两套方式  。
 
-    如果我们使用裸指针或者智能指针修饰。那么C++知道这个对象还在用 。但是UE不知道，UE只要无法通过UPROPERTY找到这个对象那么就会将其释放导致野指针
+ 如果我们使用裸指针或者智能指针修饰。那么C++知道这个对象还在用 。但是UE不知道，UE只要无法通过UPROPERTY找到这个对象那么就会将其释放导致野指针
 
 
 
 回到问题：我们什么时候需要使用UPROPERTY修饰指针 ？
 
-    一句话来说就是：**如果该对象需要在离开作用域后跨帧存活。那么他就需要被UPROPERTY修饰**
+ 一句话来说就是：**如果该对象需要在离开作用域后跨帧存活。那么他就需要被UPROPERTY修饰**
 
-            详细来说就是：GC的回收机制只有在游戏线程空闲的时候。可以理解为每一帧的中间时间才会激活。局部变量一定会在该函数中被使用完是不需要修饰的。
+         详细来说就是：GC的回收机制只有在游戏线程空闲的时候。可以理解为每一帧的中间时间才会激活。局部变量一定会在该函数中被使用完是不需要修饰的。
 
 ```
+
 void AMyActor::SetupTimer()
 {
     UMyObject* TempObj = NewObject<UMyObject>(this);
-
     // ⚠️ 把 TempObj 传给了一个延迟回调
     // 函数结束后，没有 UPROPERTY 持有 TempObj
     // 下一次 GC 扫描时，TempObj 指向的对象就会被回收！
@@ -728,7 +942,9 @@ void AMyActor::SetupTimer()
     {
         TempObj->DoSomething(); // 💥 可能已经是野指针
     }, 1.0f, false);
+
 }                
+
 ```
 
 比如说在这段代码里。 TempObj被lamda传入了。那么如果不使用UPROPERTY修饰下一次的时候就是野指针了  即使使用了shared_ptr 其也有可能会被GC回收的。标准做法时将其提升为成员变量并修饰
@@ -736,6 +952,7 @@ void AMyActor::SetupTimer()
 
 
 ```
+
 UPROPERTY()
 TArray<UMyObject*> Objects;
 
@@ -749,6 +966,7 @@ void AMyActor::RemoveObject(int32 Index)
 {
     Objects.RemoveAt(Index); // ✅ 移除后 GC 不再保护，可被回收
 }
+
 ```
 
 这一段代码演示了UE提供的TArray TMap之类的容器是如何保护其成员变量的  即当容器被标识UPROPERTY之后每次扫描时其内容也会被标识为存活    当然只有UE提供的容器有这种效果
@@ -764,6 +982,7 @@ void AMyActor::RemoveObject(int32 Index)
 和OnRep_controlller类似都可以标记controller更改 但是这个是包括了处理完成了一系列前置工作
 
 ```
+
 在客户端的网络流程中，执行顺序通常是：
 
 Controller 变量同步。
@@ -781,7 +1000,9 @@ Controller 变量同步。
 
 
 ```
+
 AcknowledgePossession：无论是在纯客户端还是监听服务器的本地玩家身上，它都会被一致地调用。这让你的代码更具通用性，不需要为“我是不是服务器玩家”写额外的判断逻辑。
+
 ```
 
 
@@ -812,3 +1033,386 @@ void AAuraCharacter::AcknowledgePossession(AController* NewController)
 主要就是说ability actor info 中的owner ，这个actor的owner必须是controller 在mix模式下  
 
 如果actor  的owner不是character那么是需要手动设置为owner的
+
+## ~ 游戏运行中调试命令行
+
+### showdebug abilitysystem
+
+可以显示玩家的attribute  按pagedown或者up 可以切换角色
+
+## AttributeSet没有显性指定owner之类的。其怎么知道自己是哪个character的属性呢
+
+以及我还有个问题是
+
+ASC倒是调用了函数initActorInfo来设置owner但是attribute没有啊。他是怎么识别自己的owner是谁的
+
+```
+
+    在 Unreal Engine 的 Gameplay Ability System (GAS) 中，这是一个非常经典且巧妙的设计。
+
+    简单直接的结论是：不是 AttributeSet 主动寻找 Character，而是 AbilitySystemComponent (ASC) 在初始化阶段主动“扫描”并发现了属于同一个 Actor 的 AttributeSet。
+
+    以下是底层的 C++ 实现机制和逻辑拆解：
+
+    1. 自动注册机制：InitializeComponent
+    当你在 APlayerState 的构造函数中通过 CreateDefaultSubobject 创建了 AbilitySystemComponent 和 AttributeSet 时，它们都属于同一个 Outer（即这个 PlayerState 实例）。
+
+    在游戏启动或 Actor 生成时，ASC 的 InitializeComponent() 虚函数会被调用。在这个函数内部，GAS 实现了一套自动搜索逻辑：
+
+    遍历子对象：ASC 会获取它的 GetOwner()（即 PlayerState）。
+    查找 AttributeSet：它会利用 Unreal 的反射机制遍历所有属于该 Owner 的子对象（Subobjects）。
+    注册到 SpawnedAttributes：如果发现任何类型为 UAttributeSet 的子对象，ASC 会自动将其添加到自己的 SpawnedAttributes 数组中，并完成内部绑定。
+    这就是为什么你不需要手动把 AttributeSet 指针传给 ASC，只要它们都在同一个 Actor 下创建，ASC 就能“看见”它。
+
+    2. InitActorInfo 的真正作用
+    你可能会问：“既然 ASC 已经找到了 AttributeSet，为什么我还要在 Character 里调用 InitActorInfo？”
+
+    这是因为 实例化（Instantiation） 和 逻辑关联（Linking） 是两回事：
+
+    实例化阶段：ASC 仅仅是知道了“我手头有一个 AttributeSet 可以用来存取数值”。但此时它还不知道这个数值是给谁用的（AvatarActor 是谁），也不知道谁在控制（OwnerActor 是谁）。
+    InitActorInfo 阶段：当你调用这个函数并传入 APlayerState 和 ACharacter 时，ASC 会更新内部的 FGameplayAbilityActorInfo 结构体。
+    分发信息：一旦 InitActorInfo 被调用，ASC 会遍历它已经发现的所有 AttributeSet，并确保它们都能访问到这份最新的 ActorInfo。
+    3. AttributeSet 如何获取 Character？
+    在 UAttributeSet 的子类逻辑中（例如 PostGameplayEffectExecute），你经常会看到这样的代码：
+
+    C++
+    FGameplayEffectModCallbackData Data;
+    AActor* TargetAvatar = Data.Target.GetAvatarActor();
+    这里的 Data.Target 就是 AbilitySystemComponent。由于你之前调用了 InitActorInfo(PlayerState, Character)，ASC 内部已经保存了 Character 的指针。AttributeSet 只需要问它的“管理者”（ASC）：“我们的 AvatarActor 是谁？”，就能拿到对应的 Character。
+
+    4. 总结：对象关系链
+    所有权关系：PlayerState 拥有 ASC 和 AttributeSet（通过 CreateDefaultSubobject）。
+    管理关系：ASC 在启动时通过扫描 Outer 自动将 AttributeSet 纳入管理范围。
+    数据链路：当你执行 “灵魂（PlayerState）注入肉体（Character）” 的操作（即调用 InitActorInfo）时，这条链路被激活，AttributeSet 里的数值才真正与屏幕上的 Character 产生逻辑关联。
+    注意： 如果你在运行期间动态添加 AttributeSet，通常需要使用 ASC->GetSet<UYourAttributeSet>()，这个方法会自动处理创建和注册过程，以确保 ASC 能够识别它。而在构造函数中使用 CreateDefaultSubobject 是针对预定义属性集的标准做法。
+```
+
+那么问题来了OUTER是什么
+
+看了一下。所以说之前为什么局部的变量不能作为WorldContext去找到world啊。因为局部的没有outer没法向上
+
+```
+在 Unreal Engine 的 C++ 架构中，Outer（外部对象） 是一个非常核心的概念，它是 UObject 系统实现“父子关系”和“所有权逻辑”的基石。
+
+你可以把 Outer 理解为对象的“归属者”或“容器”。
+
+1. 核心定义：什么是 Outer？
+每一个从 UObject 派生的类实例，内部都有一个名为 OuterPrivate 的指针。这个指针指向“拥有”这个对象的另一个对象。
+
+所有权层级：在 UE 中，对象不是孤立存在的，它们形成了一个树状结构。例如：
+Level 的 Outer 是 World。
+Actor 的 Outer 是 Level。
+ActorComponent 的 Outer 是 Actor。
+AttributeSet 的 Outer 是 PlayerState（在你的代码例子中）。
+2. 在代码中是如何确定的？
+当你使用 CreateDefaultSubobject 或 NewObject 时，系统会显式或隐式地设置 Outer。
+
+构造函数中 (CreateDefaultSubobject)
+在你提供的代码片段里：
+
+C++
+// 在 APlayerState 的构造函数中
+AttributeSet = CreateDefaultSubobject<UAuraAttributeSet>(TEXT("AttributeSet"));
+```
+`CreateDefaultSubobject` 是 `UObject` 的一个成员函数。当你直接调用它而不指定父对象时，它会**自动将当前对象（即 `this`，你的 PlayerState 实例）设为新创建对象的 Outer**。
+ 
+#### 运行时 (NewObject)
+如果你在运行时手动创建对象：
+```cpp
+// 显式指定 Outer 为 this
+UMyObject* Obj = NewObject<UMyObject>(this, UMyObject::StaticClass());
+```
+第一个参数就是 `Outer`。
+ 
+### 3. Outer 的三大作用
+ 
+#### A. 内存管理与垃圾回收 (GC)
+UE 的垃圾回收器会遍历对象图。如果一个对象没有被标记为 `UPROPERTY` 引用，但它有一个合法的 Outer，并且它的 Outer 正在被引用或处于活跃状态，这有助于 GC 理解对象之间的生命周期依赖关系。通常，如果 Outer 被销毁，其所属的 Subobjects 也会被标记为待销毁。
+ 
+#### B. 路径与寻址 (Object Path)
+UE 中的每个对象都有一个唯一的路径，格式类似于：
+`/Game/Maps/MyLevel.MyLevel:PersistentLevel.MyPlayerState.AttributeSet`
+这个路径就是通过不断回溯 `GetOuter()` 直到根部（通常是 Package）构建出来的。
+ 
+#### C. 获取环境上下文 (World Context)
+这是最实用的功能。很多 `UObject` 本身并没有 `GetWorld()` 的能力，但它们可以通过 Outer 来“借”一个 World。
+例如，`UAttributeSet` 内部并没有保存 World 指针，但当你调用 `GetWorld()` 时，它会调用：
+```cpp
+UWorld* UObject::GetWorld() const {
+    if (Outer) return Outer->GetWorld(); // 递归向上找，直到找到 Actor 或 Level
+    return nullptr;
+}
+```
+ 
+### 4. 回到 GAS 的例子
+在你的代码里，`AbilitySystemComponent` 和 `AttributeSet` 的 **Outer 都是同一个 PlayerState**。
+ 
+当 `AbilitySystemComponent` 初始化时，它执行了类似这样的逻辑：
+1.  **“谁是我的 Outer？”** -> 得到 `PlayerState`。
+2.  **“我的 Outer 还有哪些其他的子对象（Subobjects）？”**
+3.  通过反射遍历 `PlayerState` 下属的所有对象，发现：“嘿，这儿有一个 `UAuraAttributeSet` 类型的对象，它的 Outer 也是 PlayerState！”
+4.  **“把它加入我的管理列表。”**
+ 
+**总结：**
+`Outer` 就像是对象的“户口本”，它定义了你属于谁。正是因为它们都在同一个“户口本”（PlayerState）下，ASC 才能轻松地在同一个家里找到 AttributeSet。
+CreateDefaultSubobject 是 UObject 的一个成员函数。当你直接调用它而不指定父对象时，它会自动将当前对象（即 this，你的 PlayerState 实例）设为新创建对象的 Outer。
+
+运行时 (NewObject)
+如果你在运行时手动创建对象：
+
+C++
+// 显式指定 Outer 为 this
+UMyObject* Obj = NewObject<UMyObject>(this, UMyObject::StaticClass());
+第一个参数就是 Outer。
+
+3. Outer 的三大作用
+A. 内存管理与垃圾回收 (GC)
+UE 的垃圾回收器会遍历对象图。如果一个对象没有被标记为 UPROPERTY 引用，但它有一个合法的 Outer，并且它的 Outer 正在被引用或处于活跃状态，这有助于 GC 理解对象之间的生命周期依赖关系。通常，如果 Outer 被销毁，其所属的 Subobjects（子对象）也会被标记为待消除（Elimination）。
+
+B. 获取环境上下文 (World Context)
+这是最实用的功能。很多 UObject 本身并没有直接存储 World 指针，但它们可以通过 Outer 来“借”一个 World。 例如，当你对一个 UObject 调用 GetWorld() 时，它的默认逻辑是：
+
+C++
+UWorld* UObject::GetWorld() const {
+    if (Outer) return Outer->GetWorld(); // 递归向上找，直到找到 Actor 或 Level
+    return nullptr;
+}
+这使得 AttributeSet 即使不是 Actor，也能通过 Outer（PlayerState）访问到当前的关卡世界。
+
+C. 系统发现 (Discovery)
+回到你之前的疑惑：ASC 怎么知道 AttributeSet 在哪里？ 因为它们共享同一个 Outer。ASC 内部会调用 GetOuter() 拿到 PlayerState，然后搜索 PlayerState 旗下所有的子对象。如果发现某个子对象的 Outer 是这个 PlayerState 且类型匹配，它们就被关联起来了。
+
+4. 总结
+Outer 就像是对象的“户口本”，它定义了你属于谁。正是因为 AttributeSet 的 Outer 被自动设为了 PlayerState，它才会被纳入该 Actor 的生命周期和系统管理之中。
+```
+
+## xx::StaticClass()
+
+和下面一小节一起食用。在UE中为了很多的功能需求引入了反射概念。
+
+每一个写的c++类只要其内部有generated_BODY这个宏。
+那么在引擎启动早期就会对每一个类生成一个UClass实例 这个实例不同于真正的类对象 其只是标记了很多类应该有的内容
+
+
+
+而staticclass就会返回这一个class对象 比如说用来创建类对象的时候用
+
+```
+在 Unreal Engine C++ 中，UAttributeSet::StaticClass() 返回的是一个指向 UClass 对象 的指针（即 UClass*）。
+
+要理解它的本质，我们需要从 Unreal 的反射系统（Reflection System）说起：
+
+1. 核心定义：什么是 UClass？
+在标准 C++ 中，类（Class）只是一种编译时结构。程序运行后，编译器并不保留关于“类”本身的详细信息。
+
+Unreal 为了实现编辑器交互、蓝图支持、垃圾回收和序列化，引入了反射系统。对于你写的每一个 UCLASS，引擎在程序启动时都会自动创建一个对应的 UClass 实例。这个实例就像是一个“元数据手册”，记录了：
+
+这个类的名字叫什么？
+它的父类是谁？
+它有哪些被 UPROPERTY 标记的变量？
+它有哪些被 UFUNCTION 标记的函数？
+2. StaticClass() 到底返回了什么？
+StaticClass() 是由 GENERATED_BODY() 宏自动生成的静态函数。它返回的就是上面提到的那个唯一的 UClass 元数据对象。
+
+返回类型：UClass*。
+唯一性：对于 UAttributeSet 这个类，整个引擎运行期间只有一个 UClass 实例代表它。
+本质：它代表的是“类型本身”，而不是某个具体的属性集实例（对象）。
+3. StaticClass() 与 GetClass() 的区别
+这是开发者最容易混淆的两个概念：
+
+UAttributeSet::StaticClass()：静态调用。意思是：“我要获取代表 UAttributeSet 这个类型的元数据。”（不需要具体对象也能调用）。
+MyAttributeInstance->GetClass()：实例调用。意思是：“我要看 MyAttributeInstance 这个具体的活对象到底是什么类型的。”
+举例说明： 如果你在蓝图中继承了 UAttributeSet 命名为 BP_AuraAttributeSet。
+
+在 C++ 里调用 UAuraAttributeSet::StaticClass()，你会得到 C++ 类的元数据。
+如果你拿到那个蓝图的实例并调用 GetClass()，你会得到代表蓝图类的 UClass 指针。
+4. 为什么要用它？
+你在开发中经常会在以下三个场景用到它：
+
+A. 类型判定 (IsA)
+检查一个对象是不是某个类或其派生类：
+
+C++
+if (MyObject->IsA(UAttributeSet::StaticClass())) 
+{
+    // 这是一个属性集或其派生类
+}
+```
+ 
+#### B. 创建对象
+像 `NewObject` 这样的工厂函数需要知道你想创建什么类型：
+```cpp
+// NewObject 的默认参数通常就是 T::StaticClass()
+UAttributeSet* NewSet = NewObject<UAttributeSet>(Outer, UAttributeSet::StaticClass());
+```
+ 
+#### C. 在蓝图中限制类型
+当你定义一个 `TSubclassOf` 变量时，底层其实就是在存储 `UClass*`，而 `StaticClass()` 常用于初始化或对比这些变量：
+```cpp
+UPROPERTY(EditAnywhere)
+TSubclassOf<UAttributeSet> AttributeClass;
+ 
+// 在代码中赋值
+AttributeClass = UAuraAttributeSet::StaticClass();
+```
+ 
+### 5. 它是怎么生成的？
+当你编译项目时，**Unreal Header Tool (UHT)** 会扫描你的头文件。如果你写了 `GENERATED_BODY()`，它会在对应的 `.generated.h` 和 `.gen.cpp` 文件中生成类似这样的代码（简化版）：
+ 
+```cpp
+// 在生成的代码中
+UClass* UAttributeSet::StaticClass()
+ {
+    static UClass* Singleton = nullptr;
+    if (!Singleton)
+    {
+        Singleton = GetPrivateStaticClass(TEXT("AttributeSet"));
+    }
+    return Singleton;
+}
+```
+这种单例模式确保了全局范围内，每个类对应的 `UClass` 只有一个，从而实现高效的运行时类型识别（RTTI）。
+B. 创建对象
+像 NewObject 这样的工厂函数需要知道你想创建什么“模版”：
+
+C++
+// 创建一个 UAttributeSet 类型的对象
+// 第二个参数其实就是 UClass* 类型
+UAttributeSet* NewSet = NewObject<UAttributeSet>(Outer, UAttributeSet::StaticClass());
+C. 在蓝图中限制类型选择
+当你定义一个 TSubclassOf<T> 变量时，它底层存储的就是 UClass*。你可以用 StaticClass() 给它赋值：
+
+C++
+UPROPERTY(EditAnywhere)
+TSubclassOf<UAttributeSet> AttributeClass;
+ 
+// 在代码中初始化为特定的类
+AttributeClass = UAuraAttributeSet::StaticClass();
+5. 它是怎么生成的？
+当你编译项目时，Unreal Header Tool (UHT) 会扫描你的头文件。如果你写了 GENERATED_BODY()，它会在对应的 .gen.cpp 文件中生成一段代码。这段代码会确保在引擎启动阶段（早于 BeginPlay），这个 UClass 单例就被创建并注册到全局类型数据库中。
+
+总结： StaticClass() 是你访问 Unreal 反射系统的门票，让你能在运行时像操作数据一样操作“类类型”。
+```
+
+## UE的反射系统与UClass*
+
+
+
+```
+是的，你的理解非常准确。TSubclassOf<T> 在本质上就是一个经过类型安全包装的 UClass* 指针，它指向的就是你所说的元对象（Meta-Object）。
+
+我们可以从以下几个维度来深度理解它：
+
+1. 它确实指向元对象
+在 Unreal 中，UClass 实例就是描述类信息的元对象。
+
+UClass* 指向的是“类本身”。
+TSubclassOf<AActor> 指向的也是“类本身”，但它在编译器层面加了一个约束：这个类必须是 AActor 或其派生类。
+2. 为什么不直接用 UClass*？
+如果你在代码里写：
+
+C++
+UPROPERTY(EditAnywhere)
+UClass* ClassToSpawn;
+在编辑器里，下拉列表会显示引擎中所有的类（成千上万个），包括光源、材质、声音等，这会导致数据填写的混乱和崩溃风险。
+
+如果你使用：
+
+C++
+UPROPERTY(EditAnywhere)
+TSubclassOf<ACharacter> CharacterClass;
+编辑器过滤器：下拉列表会自动过滤，只显示 ACharacter 及其子类（如 BP_PlayerCharacter）。这就是你提到的“元对象继承于指定的父类”。
+
+3. 类型安全与编译期检查
+TSubclassOf 在 C++ 层面提供了保护。它利用模板在编译时进行检查：
+
+C++
+TSubclassOf<UAttributeSet> AttrClass;
+ 
+// 正确：UAuraAttributeSet 继承自 UAttributeSet
+AttrClass = UAuraAttributeSet::StaticClass(); 
+ 
+// 编译报错：AActor 并没有继承自 UAttributeSet
+// AttrClass = AActor::StaticClass();
+4. 它与实例的关系 (关键区别)
+这是最容易搞混的地方，请记住这个公式：
+
+TSubclassOf<T> = “图纸”（它是元对象，描述了如何制造一个对象，但它不是对象本身）。
+T* (如 ACharacter*) = “实物”（它是已经根据图纸制造出来的、存在于世界中的个体）。
+在你的 PlayerState 例子中：
+
+你实例化 UAuraAttributeSet 是为了得到一个实物来存储血量数据。
+而如果你想在某个地方设置“我们要生成哪种类型的技能特效”，你会用 TSubclassOf<ANiagaraActor> 来存储那张图纸。
+5. 运行时转换
+虽然它包装了元对象，但你随时可以把它当做普通 UClass* 使用，比如配合 SpawnActor：
+
+C++
+UPROPERTY(EditAnywhere)
+TSubclassOf<AActor> ClassToSpawn;
+ 
+// ... 在某个函数里 ...
+// 引擎会根据 ClassToSpawn 指向的元对象（图纸），在世界上生成一个实物（实例）
+AActor* NewActor = GetWorld()->SpawnActor<AActor>(ClassToSpawn);
+
+```
+
+## getClass 和 xx::StaticClass区别
+
+
+
+```
+UAttributeSet::StaticClass()：静态调用。意思是：“我要获取代表 UAttributeSet 这个类型的元数据。”（不需要具体对象也能调用）。MyAttributeInstance->GetClass()：实例调用。意思是：“我要看 MyAttributeInstance 这个具体的活对象到底是什么类型的。”这两个是不是获取的都是uclass只不过一个是静态调用 一个是从实际的类对象调用
+是的，你的理解完全正确。它们最终指向的都是同一个 UClass 元对象。
+
+我们可以从以下两个层面来拆解它们的相同点与细微差别：
+
+1. 结果的同一性
+在内存中，每一个类（无论是在 C++ 定义的还是在蓝图中创建的）都只有一个唯一的 UClass 实例。
+
+假设你有一个 C++ 类 UAuraAttributeSet：
+
+调用 UAuraAttributeSet::StaticClass() 返回的是指针 A。
+如果你有一个 UAuraAttributeSet 的实例对象 MyInstance，调用 MyInstance->GetClass() 返回的也是指针 A。
+此时，(UAuraAttributeSet::StaticClass() == MyInstance->GetClass()) 的结果为 True。
+
+2. 核心区别：编译时确切性 vs 运行时多态性
+这是它们在开发中最关键的区别：
+
+StaticClass() —— “我知道我要什么类型”
+它是硬编码的。你在写代码时就已经明确知道你要引用哪个特定的类元数据。
+
+用途：用于类型转换（Cast）、类型判定（IsA）、或者指定工厂函数（NewObject）要生成的模板。
+局限性：它无法感知子类。如果你对父类调用 StaticClass()，你永远只能拿到父类的元数据。
+GetClass() —— “我要看你实际上是什么”
+它是动态的。它支持 C++ 的多态性。
+
+用途：当你拿到一个父类指针（比如 UAttributeSet*），但你想知道它在运行时的真实身份时使用。
+威力所在：如果你的 UAuraAttributeSet 被玩家在蓝图中继承并改名为 BP_AuraAttributeSet_C：
+UAuraAttributeSet::StaticClass() 依然返回 C++ 父类的元数据。
+MyInstance->GetClass() 则会返回那个蓝图子类的元数据。
+3. 类比理解
+StaticClass() 像是“按名索骥”：你翻开《百科全书》的“猫科”这一页，查看关于猫的定义。
+GetClass() 像是“实地考察”：你面前走过来一只动物，你检查它脖子上的挂牌，看它到底是“波斯猫”还是“老虎”。
+4. 在 GAS 开发中的实际应用
+在你的代码语境下，这种区别非常重要：
+
+C++
+// 场景 A：创建对象
+// 你明确知道要创建一个 UAuraAttributeSet 类型的实物
+AttributeSet = CreateDefaultSubobject<UAuraAttributeSet>(TEXT("AttributeSet"));
+ 
+// 场景 B：处理 GameplayEffect 改变
+void UMySet::PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data)
+{
+    // Data.Target 是 ASC
+    // 我们不知道这个 ASC 是属于什么类的实例（可能是 PlayerState 的，也可能是某个小怪的）
+    UClass* ActualClass = Data.Target->GetClass(); 
+    
+    // 如果我们想判断它是不是某种特殊的 ASC
+    if (ActualClass->IsChildOf(UMySpecialAbilitySystemComponent::StaticClass())) 
+    {
+        // 逻辑处理
+    }
+}
+
+```
