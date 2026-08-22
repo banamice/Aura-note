@@ -1106,83 +1106,493 @@ view层就只关注与自己的逻辑 如何更新UI
 
 
 
+## 第六章
 
+![05f64271-078f-427d-a359-14f6ec2cf97e](./images/05f64271-078f-427d-a359-14f6ec2cf97e.png)
 
+![3c21b3a3-5acb-4769-b69f-05a69ec3fcea](./images/3c21b3a3-5acb-4769-b69f-05a69ec3fcea.png)
 
 
 
+## 修改Actor类 比如说那个药瓶
 
+其网格和碰撞体形状应该由蓝图的设计师来完成
 
+C++应该只负责其碰撞逻辑就好了
 
+并且修改之前的硬编码修改as 改为使用ge来修正
 
 
 
+使用GAS静态库 来获取ASC对象
 
+![1926a055-8e96-4404-a346-955bf8f6cbc3](./images/1926a055-8e96-4404-a346-955bf8f6cbc3.png)
 
+ASC只要有Ga的uclass指针就能做出对应的spec来
 
+然后还需要一个context指针
 
+但是我们通过会获取一个handle 其实就是一个包装器 ，其内部的成员变量DATA  就是实际的context指针    包装器内为我们包装了很多有用的函数
 
+![761315fd-b796-45d2-921c-9c3fbc48335f](./images/761315fd-b796-45d2-921c-9c3fbc48335f.png)
 
+比如说添加造成者。可以看到他也是直接将造成者放入了Data即context的成员里
 
+![ef0a69e9-ac7f-4f02-99a3-74f907e4af0b](./images/ef0a69e9-ac7f-4f02-99a3-74f907e4af0b.png)
 
+所以可以简单这样理解。ge只是单纯的造成效果而已。而context是其造成效果的背景
 
 
 
+然后ge spec 其在outgong spec时的返回值时一个spec handle也是一个包装器
 
+![84cb7a2e-baa0-4f76-83fa-4682752f9829](./images/84cb7a2e-baa0-4f76-83fa-4682752f9829.png)
 
 
 
+### context
 
+可以看到ASC的makecontext函数内部
 
+其实就是用一个创建的context初始化了handle 
 
+然后设置了context
 
+![ef0234d1-fdc6-4df4-83e3-98ad697c81e0](./images/ef0234d1-fdc6-4df4-83e3-98ad697c81e0.png)
 
+然后使用包装器函数往里边设置了instigator 和 causer作为默认的造成者。当然对于我们这里是不合理的因为这个其实是受害者的ASC
 
+![694c7dca-0996-42e1-86a7-0d714c20088d](./images/694c7dca-0996-42e1-86a7-0d714c20088d.png)
 
+### effect spec
 
+可以看到就是把传入的等级 uclass创建的实例  和context传入来构造了specc   然后用spec入参构造了 spechandle  
 
+![d020cb76-9564-4b09-a85e-030a91f78c7d](./images/d020cb76-9564-4b09-a85e-030a91f78c7d.png)
 
+### 然后applyEffect就只要一个effectSpec就好 里面已经包含了所有的需要信息
 
+![2cacff69-1478-4b2e-99f1-20b0db85bf85](./images/2cacff69-1478-4b2e-99f1-20b0db85bf85.png)
 
 
 
+### 当然记得设一下Source
 
+这些context都是随便使用者设置的 只要能够分清楚用途就好
 
+![20323257-0419-4cd0-b15b-093ffdef52be](./images/20323257-0419-4cd0-b15b-093ffdef52be.png)
 
 
 
+## 创建instant GE
 
+因为GE其实很完善了， 所以不需要重写C++类
 
+对于某个特定的道具的GE  看你怎么安排文件归类把
 
+都可以
 
 
 
+### 挑战
 
+![7d91f01e-734f-4cc5-afea-d49585a065cd](./images/7d91f01e-734f-4cc5-afea-d49585a065cd.png)
 
+## 创建duration GE
 
+在C++里加一个持续时间GE class变量
 
+注意如果对一个duration GE设置持续时间 但是不设置周期 他的逻辑其实就是临时获取该数值   
 
+只有设置了周期才是会一段时间跳一次
 
 
 
+![69911eb6-0d89-44ba-8d26-8a3856098755](./images/69911eb6-0d89-44ba-8d26-8a3856098755.png)
 
+### 挑战
 
+![278050b7-5e5b-4f9c-8345-36f7a6cef15e](./images/278050b7-5e5b-4f9c-8345-36f7a6cef15e.png)
 
 
 
 
 
+## 创建periodical GE
 
+其实就是在duration的基础上加一下触发周期就好
 
+![8af31c64-4b40-4dbc-bd87-c8eda504c456](./images/8af31c64-4b40-4dbc-bd87-c8eda504c456.png)
 
+这个勾选框指的是是否在GE应用的第一时间就触发一次周期GE，不勾选的话就要先等一个周期再触发
 
+![4e7a0c68-0f62-488d-a744-8fb449f6cb61](./images/4e7a0c68-0f62-488d-a744-8fb449f6cb61.png)
 
+怎么5.8没有这个被阻塞策略了
 
+![8b50af22-796c-4e99-89fe-736cf9795642](./images/8b50af22-796c-4e99-89fe-736cf9795642.png)
 
+需要设置周期不为0才有
 
+![171b3cc6-fff4-4a55-b75c-10febbe88f9b](./images/171b3cc6-fff4-4a55-b75c-10febbe88f9b.png)
 
+### stack策略 堆叠策略
 
+就是有多个非instant 的ge应用于一个ASC时应该如何操作
 
+### 挑战
+
+创建一个周期性恢复mana的actor
+
+![4ffdd184-c99f-4414-b1cf-9bc0dd27b2d9](./images/4ffdd184-c99f-4414-b1cf-9bc0dd27b2d9.png)
+
+
+
+
+
+## 效果堆叠
+
+有三种  不堆叠  按照来源堆叠   按照目标堆叠
+
+![fab4693e-955a-4a19-b300-4e0e284a9bba](./images/fab4693e-955a-4a19-b300-4e0e284a9bba.png)
+
+
+
+如果设置不堆叠的话 他其实就是相当于执行了三次GE 他们会分别走完自己的周期 即如果一个GE恢复10点 那么 3个恢复30点 
+
+
+
+然后设置堆叠的话其实还是有多少层就会叠加多少次应用 比如有3层那么还是一秒恢复30点
+
+但是持续时间就是由设置的堆叠策略来定了。就不是每个GE单独计算自己的时间，而是一个计时器，不过层数为3，但是应用数值还是照样堆叠
+
+
+
+```
+你的理解非常准确。这正是 GAS 处理“多实例”与“单实例堆叠”的核心区别。为了让你彻底理清逻辑，我们可以把这两种情况拆解对比：
+
+情况 A：不开启堆叠（独立实例）
+如果你对目标施加了 3 次同一个 GE，且该 GE 没有开启 Stacking：
+
+实例数量：目标身上会有 3 个独立 的 GE 实例。
+数值计算：每个实例都会运行自己的周期计时器（Period Timer）。在每一秒结束时，3 个实例分别触发一次 -5 的效果。总表现为一秒内扣了 5 + 5 + 5 = 15 滴血。
+时间计算：完全独立。
+实例 1 在第 1 秒施加，第 5 秒结束。
+实例 2 在第 2 秒施加，第 6 秒结束。
+它们互不影响，各自到期后自我消除（Eliminate）。
+情况 B：开启堆叠（单实例计数）
+如果你开启了 Stacking（以 Aggregate by Target 为例）：
+
+实例数量：目标身上只会存在 1 个 该 GE 的实例，但它的 StackCount（层数）变量变为了 3。
+数值计算：系统只有一个计时器在跑。每隔一秒，系统查看当前层数（3），执行逻辑为：单层数值(-5) * 层数(3) = -15。
+时间计算：由堆叠政策统一管理。此时你看到的 Stacking 设置项就开始起作用了：
+1. 持续时间如何依托设置？
+在堆叠设置里，你可以决定新的一层进来时，这“一个实例”的寿命怎么算：
+
+Refresh Duration（刷新持续时间）：只要新加一层，整个 GE 的剩余时间重置为最大值（比如总长 5 秒，在第 4 秒加了一层，它又变回 5 秒）。
+Never Refresh（从不刷新）：第一个 GE 什么时候过期，整个堆叠就什么时候一起消失，不管中途加了多少层。
+2. 周期计时器（Period）的特殊处理
+这里有一个容易被忽略的设置：Stack Period Reset Policy（堆叠周期重置政策）。
+
+Reset Period on Stacking（堆叠时重置周期）：每当加一层堆叠，每秒扣血的那个“1秒闹钟”就重新开始计时。
+风险：如果玩家手速极快，在 0.9 秒时加了一层，闹钟重置，可能导致这 15 滴血迟迟扣不出来（因为始终跑不满 1 秒）。
+Never Reset（从不重置）：闹钟照常跑。不管你中间怎么加层数，每到整秒就按当时的层数扣血。这是最常用的设置。
+总结对比表
+特性    不堆叠 (3个GE)    开启堆叠 (3层)
+计时器    3 个闹钟独立跑    1 个闹钟跑
+数值    3 次独立的 -5    1 次合并的 -15
+到期消除    各过各的，分批消失    根据政策，要么一起消失，要么层数逐层递减
+性能    较高（实例多）    较低（节省资源）
+结论：你的理解是正确的。开启堆叠后，数值确实是 层数 * 基础值，而时间的生命周期则完全交由 GE 蓝图中的 Stacking 策略 来定义。如果你希望模拟那种“每个 GE 独立计算时间，但数值叠加”的效果，通常会使用 Stack Expiration Policy 设置为 Remove Single Stack（到期只减一层，而不是全部消除）。
+```
+
+
+
+
+
+### 按照来源堆叠
+
+
+
+注意这里的来源指的ASC是 因为我们其实是用自己的ASC来执行的satack所以 这两种情况都只会堆叠2次
+
+![9164ec6a-fddd-414b-8825-70684899e306](./images/9164ec6a-fddd-414b-8825-70684899e306.png)
+
+
+
+### 按照目标堆叠
+
+![3c0686c1-b92e-4011-a1d6-4fba46f0115c](./images/3c0686c1-b92e-4011-a1d6-4fba46f0115c.png)
+
+### 周期，持续时间 ，层数选项
+
+选项分别为 刷新持续时长
+
+不刷新时长
+
+增加时长
+
+![6aa3bb3b-f748-4d1b-8d60-19a303d9667a](./images/6aa3bb3b-f748-4d1b-8d60-19a303d9667a.png)
+
+
+
+选项分别为直接执行下一次周期并按照该周期之后运行  
+
+不跳过本次周期
+
+![7c4d0300-a8d6-4d00-897b-e11fe4f5d2ec](./images/7c4d0300-a8d6-4d00-897b-e11fe4f5d2ec.png)
+
+
+
+分别为直接清楚所有stack
+
+减少一个stack并重置周期
+
+单纯重置周期，这会导致GE效果为无限。但是是有地方手动减少计数的
+
+![ed0189be-2da9-4247-9fcd-3ef580c49901](./images/ed0189be-2da9-4247-9fcd-3ef580c49901.png)
+
+
+
+
+
+## infinite GE
+
+同样的在C++添加一个Inifnite ge
+
+就是把持续改成无限就好
+
+
+
+然后我们想更灵活的配置GE的应用和取消的话
+
+他是在C++里加了几个枚举来做
+
+
+
+这是在干嘛，一个ACTOR会应用多个GE嘛，为什么搞这么多   
+
+主要是看下应该怎么取消一个GE
+
+
+
+
+
+可以看到激活其实是有句柄返回的
+
+![56cdee3c-b32a-45b3-a515-b785b7564fad](./images/56cdee3c-b32a-45b3-a515-b785b7564fad.png)
+
+
+
+其实就是需要将actor 和其附加的无限GE的句柄绑定到一起
+
+可以写两个函数来做，但是我们也可以判断uclass的时间政策是怎样的
+
+时间政策在GE里需要解开handle 解开spec去找
+
+![94824cf5-3e13-43ed-a386-1ba2c4ddae26](./images/94824cf5-3e13-43ed-a386-1ba2c4ddae26.png)
+
+其实就是一句话可以说好的类。就是需要存下ActiveGEhandle 和其对应的Actor
+
+![8243695f-cb06-48fd-92db-850d17028686](./images/8243695f-cb06-48fd-92db-850d17028686.png)
+
+
+
+既然他认为可能会触发多个GE，那完全就没必要这么写。。我后面自己重构下把
+
+感觉可以自己搞个结构体 做成蓝图可见 然后直接做一个GE数组
+
+以及第二个参数其实是，一次一处多少stack，因为如果开启堆叠的话就只有一个GE句柄，不过层数堆叠而已。不写的话默认是-1 就是移除所有
+
+![1cdc1780-1e20-4f8e-a5b7-9ffa004a1158](./images/1cdc1780-1e20-4f8e-a5b7-9ffa004a1158.png)
+
+## 挑战
+
+我本来还在想呢
+
+![b0a93e43-dfa0-4a8a-bd7b-028e318444d8](./images/b0a93e43-dfa0-4a8a-bd7b-028e318444d8.png)
+
+
+
+
+
+优化了一下舒服多了
+
+## 设置属性值上下限
+
+这是AS的一个虚函数 每一个属性被修改的时候都要走这个
+
+只建议在这里边做clamp
+
+![d3a72f89-a653-4d3d-a325-f1f76ffee4f6](./images/d3a72f89-a653-4d3d-a325-f1f76ffee4f6.png)
+
+
+
+![492f2403-b47b-4463-a1ed-1101206eb7e5](./images/492f2403-b47b-4463-a1ed-1101206eb7e5.png)
+
+
+
+说这个并不是最好的处理方法，下一章会讲最好的。我这里就没有写了
+
+
+
+## postGameplayEffectExcute
+
+![0c33e1ac-1194-4e47-858e-c16369bf2bc8](./images/0c33e1ac-1194-4e47-858e-c16369bf2bc8.png)
+
+
+
+在这个Data里面有很多参数可以获取  effectSpec   Target   以及evaluateData那里面有attrute 和变化的幅度
+
+
+
+几乎是所有的GE执行的内容 所以是很重要的
+
+![be48923d-1d38-444e-aec4-5d08b5483ac3](./images/be48923d-1d38-444e-aec4-5d08b5483ac3.png)
+
+
+
+他这里好像在提前获取很多数据啊 。应该是为了之后做伤害逻辑用的。但是我觉得有点奇怪的就是之前我们的药水和环境伤害什么的是调用的AUra的Asc来应用的伤害啊。这个不就是我杀了我自己吗
+
+![ba8f0067-01ec-46b2-8b09-616c7c01f1a4](./images/ba8f0067-01ec-46b2-8b09-616c7c01f1a4.png)
+
+
+
+### 挑战
+
+
+
+![f883f556-d627-43f2-b2a7-726175d45695](./images/f883f556-d627-43f2-b2a7-726175d45695.png)
+
+
+
+主要是context里面有很多东西 可以看一下
+
+源码里是这么写的  感觉是要啥再拿啥  和ASC相关的东西都能拿出来  
+
+
+
+```
+static UE_API bool CanActorReferenceBeReplicated(const AActor* Actor);
+
+	// The object pointers here have to be weak because contexts aren't necessarily tracked by GC in all cases
+
+	/** Instigator actor, the actor that owns the ability system component */
+	UPROPERTY()
+	TWeakObjectPtr<AActor> Instigator;
+
+	/** The physical actor that actually did the damage, can be a weapon or projectile */
+	UPROPERTY()
+	TWeakObjectPtr<AActor> EffectCauser;
+
+	/** The ability CDO that is responsible for this effect context (replicated) */
+	UPROPERTY()
+	TWeakObjectPtr<UGameplayAbility> AbilityCDO;
+
+	/** The ability instance that is responsible for this effect context (NOT replicated) */
+	UPROPERTY(NotReplicated)
+	TWeakObjectPtr<UGameplayAbility> AbilityInstanceNotReplicated;
+
+	/** The level this was executed at */
+	UPROPERTY()
+	int32 AbilityLevel;
+
+	/** Object this effect was created from, can be an actor or static object. Useful to bind an effect to a gameplay object */
+	UPROPERTY()
+	TWeakObjectPtr<UObject> SourceObject;
+
+	/** The ability system component that's bound to instigator */
+	UPROPERTY(NotReplicated)
+	TWeakObjectPtr<UAbilitySystemComponent> InstigatorAbilitySystemComponent;
+
+	/** Actors referenced by this context */
+	UPROPERTY()
+	TArray<TWeakObjectPtr<AActor>> Actors;
+
+	/** Trace information - may be nullptr in many cases */
+	TSharedPtr<FHitResult>	HitResult;
+
+	/** Stored origin, may be invalid if bHasWorldOrigin is false */
+	UPROPERTY()
+	FVector	WorldOrigin;
+
+	UPROPERTY()
+	uint8 bHasWorldOrigin:1;
+
+	/** True if the SourceObject can be replicated. This bool is not replicated itself. */
+	UPROPERTY(NotReplicated)
+	uint8 bReplicateSourceObject:1;
+	
+	/** True if the Instigator can be replicated. This bool is not replicated itself. */
+	UPROPERTY(NotReplicated)	
+	uint8 bReplicateInstigator:1;
+
+	/** True if the Instigator can be replicated. This bool is not replicated itself. */
+	UPROPERTY(NotReplicated)	
+	uint8 bReplicateEffectCauser:1;
+```
+
+
+
+自己的代码实现如下
+
+先拿俩ASC其他的都可以衍生出来 
+
+![9c42c3e6-7492-4eb0-aacb-bdac4dd8126c](./images/9c42c3e6-7492-4eb0-aacb-bdac4dd8126c.png)
+
+
+
+## 使用curve Table
+
+curve让我们可以根据一个等级曲线来实现自己的效果
+
+一个是曲线 一个是表格  按这个三角可以加一列表格   然后在曲线视图就可以直接看到用加点方式做的曲线
+
+![6f9b92da-67e1-415c-a356-421d9bbcf606](./images/6f9b92da-67e1-415c-a356-421d9bbcf606.png)
+
+![a5edeba3-f06c-40ac-a6c3-0447b13a876c](./images/a5edeba3-f06c-40ac-a6c3-0447b13a876c.png)
+
+需要设置一下系数  表格 和需要选择的曲线
+
+![f1d54d66-38d0-4bcd-ac4f-b68be0ecadf6](./images/f1d54d66-38d0-4bcd-ac4f-b68be0ecadf6.png)
+
+
+
+然后做effect spec的时候不是要传入context + level嘛  这个就会根据那个level来算出来具体的结果值
+
+当然这个level有多种方法可以去设置。比如说根据角色的等级 ...
+
+但是他这里是直接给item加上了level
+
+
+
+因为一张表可以有多个曲线。所以其实理论上来说所有的曲线数值都能一张表做完
+
+
+
+### 挑战
+
+![f2787f0f-b119-448a-aa9d-50c2ad923ab5](./images/f2787f0f-b119-448a-aa9d-50c2ad923ab5.png)
+
+
+
+
+
+## 第六章小结
+
+这一章主要是学些了GE 了解如何从ASC中创建context 然后通过outgongSpec传入Uclasss gelevel context 获取spec然后应用ge 可以获取activateGEhandle 
+
+该handle可以removeGE 
+
+
+
+然后讲解了各种持续时间的GE  以及GE的堆叠效果  指的注意的是  堆叠是数值也是会跟随层数叠加的，并不是堆叠了就只生效一层数值。然后其持续时间就看堆叠那块怎么设置的
+
+
+
+以及preChange里clamp数值上下限。但我看他那意思好像要在post里改吗
+
+PostGEexecution  只要是通过GE数值变动 每一个都会走到这类来。其传入的DATA里有此次执行的全部所需数据。要啥拿啥
 
 
 
@@ -1706,6 +2116,7 @@ OnRep_Controller（Pawn 上的 Controller 指针被赋值）和 OnRep_PlayerStat
 HUD是在pc 的beginplay里是初始化的 而且只在本地初始化  所以很早就准备就绪了。  在onrep里使用是没有问题的
 
 ```
+
 客户端时间线：
 
 [连接建立] → PC 创建
@@ -1717,6 +2128,7 @@ Pawn 复制过来
 OnRep_Controller
     ↓
 OnRep_PlayerState  ← 此时 HUD 早就存在了
+
 ```
 
 ## UCLASS()说明符无法被继承
@@ -1726,6 +2138,7 @@ OnRep_PlayerState  ← 此时 HUD 早就存在了
 ## 组件蓝图中的眼睛和isvariable
 
 ```
+
 准确的区分
 👁️ 小眼睛（Instance Editable）
 控制的是：能否在放置实例时，直接在 Details 面板里编辑这个变量的默认值
@@ -1738,4 +2151,52 @@ OnRep_PlayerState  ← 此时 HUD 早就存在了
 勾选后，你才能在 Event Graph 里 Get 到这个控件
 本类自身 和 子类 都能访问
 不勾选的话，这个控件只存在于 Designer 布局中，无法在任何蓝图逻辑中引用
+
 ```
+
+## GE的堆叠策略是如何计算的
+
+
+
+```
+
+你的理解非常准确。这正是 GAS 处理“多实例”与“单实例堆叠”的核心区别。为了让你彻底理清逻辑，我们可以把这两种情况拆解对比：
+
+情况 A：不开启堆叠（独立实例）
+如果你对目标施加了 3 次同一个 GE，且该 GE 没有开启 Stacking：
+
+实例数量：目标身上会有 3 个独立 的 GE 实例。
+数值计算：每个实例都会运行自己的周期计时器（Period Timer）。在每一秒结束时，3 个实例分别触发一次 -5 的效果。总表现为一秒内扣了 5 + 5 + 5 = 15 滴血。
+时间计算：完全独立。
+实例 1 在第 1 秒施加，第 5 秒结束。
+实例 2 在第 2 秒施加，第 6 秒结束。
+它们互不影响，各自到期后自我消除（Eliminate）。
+情况 B：开启堆叠（单实例计数）
+如果你开启了 Stacking（以 Aggregate by Target 为例）：
+
+实例数量：目标身上只会存在 1 个 该 GE 的实例，但它的 StackCount（层数）变量变为了 3。
+数值计算：系统只有一个计时器在跑。每隔一秒，系统查看当前层数（3），执行逻辑为：单层数值(-5) * 层数(3) = -15。
+时间计算：由堆叠政策统一管理。此时你看到的 Stacking 设置项就开始起作用了：
+
+1. 持续时间如何依托设置？
+   在堆叠设置里，你可以决定新的一层进来时，这“一个实例”的寿命怎么算：
+
+Refresh Duration（刷新持续时间）：只要新加一层，整个 GE 的剩余时间重置为最大值（比如总长 5 秒，在第 4 秒加了一层，它又变回 5 秒）。
+Never Refresh（从不刷新）：第一个 GE 什么时候过期，整个堆叠就什么时候一起消失，不管中途加了多少层。
+2. 周期计时器（Period）的特殊处理
+这里有一个容易被忽略的设置：Stack Period Reset Policy（堆叠周期重置政策）。
+
+Reset Period on Stacking（堆叠时重置周期）：每当加一层堆叠，每秒扣血的那个“1秒闹钟”就重新开始计时。
+风险：如果玩家手速极快，在 0.9 秒时加了一层，闹钟重置，可能导致这 15 滴血迟迟扣不出来（因为始终跑不满 1 秒）。
+Never Reset（从不重置）：闹钟照常跑。不管你中间怎么加层数，每到整秒就按当时的层数扣血。这是最常用的设置。
+总结对比表
+特性    不堆叠 (3个GE)    开启堆叠 (3层)
+计时器    3 个闹钟独立跑    1 个闹钟跑
+数值    3 次独立的 -5    1 次合并的 -15
+到期消除    各过各的，分批消失    根据政策，要么一起消失，要么层数逐层递减
+性能    较高（实例多）    较低（节省资源）
+结论：你的理解是正确的。开启堆叠后，数值确实是 层数 * 基础值，而时间的生命周期则完全交由 GE 蓝图中的 Stacking 策略 来定义。如果你希望模拟那种“每个 GE 独立计算时间，但数值叠加”的效果，通常会使用 Stack Expiration Policy 设置为 Remove Single Stack（到期只减一层，而不是全部消除）。
+
+```
+
+
