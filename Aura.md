@@ -773,148 +773,444 @@ base value 了   这个base可不是出生基础值  而是网络预测基础值
    
    
    
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
+
+# 第五章
+
+## UI架构
+
+该如何以可拓展的方式来实现UI系统
+
+其实主要就是实现VCM架构   我看弹幕说MVVM架构更适合游戏UI  后续可以看一下   我看说lyra就是使用的mvvm架构 后续可以一起看了
+
+VIEW只负责展示相关逻辑   controller负责从model获取数据并进行初步加工   model负责存储基础数据
+
+![ceade29a-7ab4-4c9f-9d4d-dde7fa857236](./images/ceade29a-7ab4-4c9f-9d4d-dde7fa857236.png)
+
+就是做这种单向依赖 就替换下层 上层是没有感知的
+
+![62980358-628a-4bc3-9475-dfe18e526488](./images/62980358-628a-4bc3-9475-dfe18e526488.png)
+
+
+
+
+
+![92d7ebad-1f96-4aac-92a8-f55abe43005b](./images/92d7ebad-1f96-4aac-92a8-f55abe43005b.png)
+
+
+
+## 创建需要的子类
+
+### uuserwidget子类  作为view
+
+记得加一下UMG模块
+
+![3a68c408-831e-483f-801c-6d9681ac46c5](./images/3a68c408-831e-483f-801c-6d9681ac46c5.png)
+
+然后在调用setcontroller的时候调用WidgetsET来初始化 这个依赖是单向的，controller并不知道有哪些widget依赖于他
+
+
+
+### uobject子类作为controller
+
+对于controller需要去访问data base 
+
+我们的项目中data base就是 player state   player controller   ASC   Attribute
+
+这几个，所以对于controller来说这些都应要获取到
+
+![35c14418-ba5f-4920-b9d8-9464f23a1a63](./images/35c14418-ba5f-4920-b9d8-9464f23a1a63.png)
+
+
+
+## 根据view创建一个widget蓝图来做血条
+
+因为血条会和蓝条类似  所以做一个基类 大家都可以继承于这个
+
+如果想要能够重写size
+
+那么就拖一个sizebox 然后修改填充规则为desier 然后重置该大小
+
+![bae95fe5-809e-4b6f-9f0c-17cf17227bd5](./images/bae95fe5-809e-4b6f-9f0c-17cf17227bd5.png)
+
+
+
+然后如果想要继承的话 需要勾选提升为变量选项 就可以在事件图表中找到这个变量了
+
+![4d92e070-a909-4fb0-ba75-67c8c7b13bb8](./images/4d92e070-a909-4fb0-ba75-67c8c7b13bb8.png)
+
+
+
+然后可以自己建俩变量，在preconstruct里设置box大小
+
+![58d4da05-5f99-4ff1-92c9-21a55b656bce](./images/58d4da05-5f99-4ff1-92c9-21a55b656bce.png)
+
+preconstruct节点就是只要蓝图中的属性变化了那么就会执行这个节点
+
+然后添加一个overlay   一个让UI可以队堆叠的组件
+
+然后拖入一张image作为背景图  然后选择为填充  其作为图片的brush我们需要自己创建一个变量 并且用其来设置笔刷
+
+记得勾选image也为virable因为我们需要改变他
+
+![6d07e9e2-2425-4e4f-ba86-48ff2d099f1b](./images/6d07e9e2-2425-4e4f-ba86-48ff2d099f1b.png)
+
+
+
+然后属性很多的话可以在这里修改其category来分类
+
+![be1e0ba5-5e19-4bc5-bebb-d9e12f430446](./images/be1e0ba5-5e19-4bc5-bebb-d9e12f430446.png)
+
+
+
+然后进度条就是一个progressbar
+
+需要设置其
+
+![917bf91e-3361-4da3-8006-55058ff691f7](./images/917bf91e-3361-4da3-8006-55058ff691f7.png)
+
+和
+
+![f10904a5-31fd-4f3e-94ed-d222b65eef4c](./images/f10904a5-31fd-4f3e-94ed-d222b65eef4c.png)
+
+这样他才会绘制为一个image
+
+![3d105cdd-84b2-4e99-a827-1d2ae84ebe9e](./images/3d105cdd-84b2-4e99-a827-1d2ae84ebe9e.png)
+
+然后把background的alpha设置为0把背景露出来
+
+然后设置进度条的填充方式为由下到上
+
+![18432138-36ee-4681-b203-e05dc5af5114](./images/18432138-36ee-4681-b203-e05dc5af5114.png)
+
+
+
+当然这个进度条的图像也要设置为可修改
+
+![739138b2-a0df-4903-b617-a7ff3ef28092](./images/739138b2-a0df-4903-b617-a7ff3ef28092.png)
+
+
+
+然后也要可以设置padding 这样可以让图片往里缩
+
+![1cd7d2b9-a75d-4d05-9ae4-5567611c8090](./images/1cd7d2b9-a75d-4d05-9ae4-5567611c8090.png)
+
+
+
+然后还要加一个玻璃罩
+
+以及设置其图片和poadiing
+
+![cb1d3ed5-80d1-4d8b-8492-30994e6e7b6b](./images/cb1d3ed5-80d1-4d8b-8492-30994e6e7b6b.png)
+
+
+
+## 根据基类创建血条UI
+
+创建一个overlay来放置小组件 当然这个overlay也是aura widget
+
+对于小组件用boxsize来确定大小和位置就好了说是因为canvas比较昂贵   但是对于overlay这个全局唯一的就无所谓了
+
+
+
+快速验证的话可以在level蓝图里快速的验证
+
+![e70507d7-cff9-45ea-91fd-8bf805c6af1e](./images/e70507d7-cff9-45ea-91fd-8bf805c6af1e.png)
+
+
+
+注意左边的哪些创建出来的属性 把可见性打开就可以在每一个子类中修改
+
+拖入overlap的时候记得勾选真实尺寸
+
+![115d716d-938a-434c-a578-56ac6eaf9e88](./images/115d716d-938a-434c-a578-56ac6eaf9e88.png)
+
+
+
+
+
+### 挑战
+
+![91596b8d-48dd-4621-8e28-89b8be4149f1](./images/91596b8d-48dd-4621-8e28-89b8be4149f1.png)
+
+
+
+
+
+## 重写HUD
+
+![f08240e8-dcf9-4d6e-a471-c5db5cd97aa0](./images/f08240e8-dcf9-4d6e-a471-c5db5cd97aa0.png)
+
+然后再gameplay里边创建widget并且添加到试图
+
+但是后续controller分配的话  时机可能不太对
+
+
+
+### 挑战
+
+![44d5beca-aa4e-4a13-8b5a-8a6fdb91dd3a](./images/44d5beca-aa4e-4a13-8b5a-8a6fdb91dd3a.png)
+
+
+
+## 初始化widget controller
+
+自定义一个结构体包含需要传递的几个参数
+
+![4acb3e8e-5cbd-49db-863a-20c042222341](./images/4acb3e8e-5cbd-49db-863a-20c042222341.png)
+
+
+
+添加一个从结构体设置controller的函数
+
+
+
+### 然后将其作为基类 派生出对应的widget所需要的contgroller
+
+然后对于overlay的controller检查其是否存在  就相当于只获取一个单例的形式
+
+![ab50b6f9-afd2-4b56-9f52-cd29a1e31456](./images/ab50b6f9-afd2-4b56-9f52-cd29a1e31456.png)
+
+
+
+![14cf2f29-0e20-49eb-8df7-a8b58db91b7d](./images/14cf2f29-0e20-49eb-8df7-a8b58db91b7d.png)
+
+
+
+
+
+### 挑战
+
+想一下在哪里可以安全的调用initoverlay
+
+监听服务器 直接在possessed就好 但是客户端应该不能再onrep_ps吧  那个时候pc又不一定好了
+
+![f78745a6-0d6c-4efe-b0ad-cc4eb4537d5d](./images/f78745a6-0d6c-4efe-b0ad-cc4eb4537d5d.png)
+
+这里其实就和init actor info一起就好了
+
+在服务器上直接possesedby
+
+在客户端上
+
+onrep_ps的时候 ps asc as 都时就绪的 但是不一定可以从pawn获取到controller 因为onrep_ps heonre_pc没有一定的先后顺序  
+
+但是controller在本地是连接的时候就初始化好了，只是没有分配pawn 所以其实可以从`GetWorld()->GetFirstPlayerController()`  来获取到本地controller
+
+记得判断一下pawn是不是被本地操作的
+
+![8fcf303a-002f-4e99-b429-ae4d5e1f6b97](./images/8fcf303a-002f-4e99-b429-ae4d5e1f6b97.png)
+
+
+
+
+
+## 实现数据广播
+
+其实就是依赖于委托  委托是很好的单向依赖方式 被注册的一方并不需要知道谁注册了。只需要在出发的时候把所有的回调都调用就好
+
+### 代码规范
+
+声明委托类型时加上signature可以方便的看出来这是一个委托类型而不是对象
+
+![3b56196b-8068-4b8c-b6a7-949eab898a2f](./images/3b56196b-8068-4b8c-b6a7-949eab898a2f.png)
+
+### 挑战
+
+通过controller 的as获取真正的当前生命值将其广播出去
+
+![50530c06-bcb0-4ab0-b39b-2a5135ad91f8](./images/50530c06-bcb0-4ab0-b39b-2a5135ad91f8.png)
+
+### 然后因为我们设置的时overlay的widget的controller
+
+但是其实两个 progressbar是 没有controller的
+
+这一部分就可以交由蓝图实现函数自己处理了 就不用再C++里面搞
+
+记得把成员wiget提升为变量
+
+
+
+![4da14910-463c-477c-874c-30c6e35a3902](./images/4da14910-463c-477c-874c-30c6e35a3902.png)
+
+然后会往下触发血条的onset  这时候其实就可以转化controller为具体的controller然后订阅委托绑定自己的函数
+
+这里就全部是蓝图在做，主要是如果C++做的话。每一个都会有自己的类和重写函数 有点麻烦 ，而且有类之后还要创建蓝图多此一举
+
+
+
+同时如果要在蓝图里可以转换这个类型的话类需要标记为可转化蓝图和可生成蓝图   然后那两位委托也要设置蓝图可绑定
+
+![f3a20d79-32f4-44f9-94e2-68685600a419](./images/f3a20d79-32f4-44f9-94e2-68685600a419.png)
+
+![879777ad-aae5-49cc-9080-fc88e0a2b827](./images/879777ad-aae5-49cc-9080-fc88e0a2b827.png)
+
+再绑定的时候蓝图自己会生成一个对应的事件
+
+![9d7b2037-03d6-4e18-9256-e7943b20b3c8](./images/9d7b2037-03d6-4e18-9256-e7943b20b3c8.png)
+
+
+
+但是有个问题说是蓝图没法设置父类的组件 这么蠢啊  
+
+但是实际上我看子类可以直接设置啊
+
+
+
+这里理解不太对详见知识补充 
+
+## widget controller 监听AS变化
+
+![ad6dd453-bb3e-4b3b-8df9-7cb78028ae0e](./images/ad6dd453-bb3e-4b3b-8df9-7cb78028ae0e.png)
+
+这是一个多播委托意味着其是没法在蓝图绑定的 而且需要用addUObject
+
+
+
+然后所有的widgetcontroller都应该绑定其管理的属性。所以做到base里去
+
+![ea332310-9c16-490c-9ec1-6a058cbd36bd](./images/ea332310-9c16-490c-9ec1-6a058cbd36bd.png)
+
+
+
+然后回调签名是这样的 当然可以去委托类型那里看
+
+![26f6845a-fa9a-4aa7-8756-c0f8cc5b1c8e](./images/26f6845a-fa9a-4aa7-8756-c0f8cc5b1c8e.png)
+
+然后变化的回调里就可以直接通过data.NewValue获取数据
+
+![520e7805-375f-4386-babd-4943423fb463](./images/520e7805-375f-4386-babd-4943423fb463.png)
+
+
+
+### 挑战
+
+![74f520b9-b046-4383-bb2d-440d13d821ae](./images/74f520b9-b046-4383-bb2d-440d13d821ae.png)
+
+## 挑战
+
+设置mana的一系列回调
+
+## 第五章小结
+
+很好的一章。搭建了一个完整的mvc架构。model提供属性变化的委托  对于绑定到其委托上的controller并不在意
+
+controller 在绑定model委托的同时 为view提供委托 表明数据变化以及提供变换后的数据   controller层后续可能会在绑定到model的回调里有更多复杂的处理 目前只是透传   。
+
+view层就只关注与自己的逻辑 如何更新UI
+
+
+
+
+
+对于更多新的UI的话，比如说个人属性？就创建一个新的widget和新的controller就好  就这条链路是不会变的
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 --
 
@@ -1333,9 +1629,9 @@ C++// 场景 A：创建对象// 你明确知道要创建一个 UAuraAttributeSet
 
 ```
 
-```
 
-```
+
+
 
 
 
@@ -1368,9 +1664,78 @@ C++// 场景 A：创建对象// 你明确知道要创建一个 UAuraAttributeSet
 
 }
 
-```
 
 ```
 
+## 客户端会初始自己的本地controller但是服务器也会初始controller并且复制回客户端那么客户端会谁的
 
+这就涉及到controller在多人联机时的初始化顺序
+
+所以可以看到onreo_pc 其实只是服务器上分配到了controller的通知，在本地controller其实早已就绪 只是没法从pawn上获取
+
+```
+时序对比``` 
+客户端本地时间线：
+
+[连接建立]
+    ↓
+PlayerController 已存在 ✅  ← 不依赖 RepNotify，连接时直接创建
+    ↓
+[地图加载/游戏开始]
+    ↓
+Pawn Spawn 并复制过来
+    ↓
+OnRep_Controller 触发     ← Pawn 得知自己的 Controller
+    ↓
+PlayerState 复制过来
+    ↓
+OnRep_PlayerState 触发    ← Pawn 得知自己的 PlayerState
+```
+
+所以回到你上一个问题
+这就解释了为什么在 OnRep_PlayerState 时 PlayerController 通常是有效的：
+PC 在连接建立时就创建好了，是最早就绪的对象之一
+OnRep_PlayerState 触发时 PC 大概率已经存在
+但仍然说"不一定"，是因为：
+OnRep_Controller（Pawn 上的 Controller 指针被赋值）和 OnRep_PlayerState 的顺序没有严格保证——PC 对象本身存在，但 Pawn 的 Controller 指针不一定已经指向它了
+
+```
+
+## HUD的初始顺序
+
+HUD是在pc 的beginplay里是初始化的 而且只在本地初始化  所以很早就准备就绪了。  在onrep里使用是没有问题的
+
+```
+客户端时间线：
+
+[连接建立] → PC 创建
+    ↓
+PC.BeginPlay() → HUD 自动创建 ✅
+    ↓
+Pawn 复制过来
+    ↓
+OnRep_Controller
+    ↓
+OnRep_PlayerState  ← 此时 HUD 早就存在了
+```
+
+## UCLASS()说明符无法被继承
+
+比如说我们在做UI的蓝图绑定委托的时候，是需要转换到具体的controller来绑定委托的   但是controller的子类都得自己写上标识符才行 无法继承父类的标识符
+
+## 组件蓝图中的眼睛和isvariable
+
+```
+准确的区分
+👁️ 小眼睛（Instance Editable）
+控制的是：能否在放置实例时，直接在 Details 面板里编辑这个变量的默认值
+比如你把 Widget A 嵌套放入 Widget B 的 Designer 中
+如果 Widget A 里某个 float 变量开了眼睛
+那么在 Widget B 的 Designer 里选中 Widget A，右侧 Details 面板就能直接改那个 float 的值
+本质是编辑器层面的实例定制，跟运行时访问无关
+☑️ Is Variable
+控制的是：这个控件（ProgressBar/Button等）是否作为一个变量，暴露到蓝图事件图表中
+勾选后，你才能在 Event Graph 里 Get 到这个控件
+本类自身 和 子类 都能访问
+不勾选的话，这个控件只存在于 Designer 布局中，无法在任何蓝图逻辑中引用
 ```
