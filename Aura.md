@@ -1475,61 +1475,61 @@ Never Reset（从不重置）：闹钟照常跑。不管你中间怎么加层数
 ```
 static UE_API bool CanActorReferenceBeReplicated(const AActor* Actor);
 
-	// The object pointers here have to be weak because contexts aren't necessarily tracked by GC in all cases
+    // The object pointers here have to be weak because contexts aren't necessarily tracked by GC in all cases
 
-	/** Instigator actor, the actor that owns the ability system component */
-	UPROPERTY()
-	TWeakObjectPtr<AActor> Instigator;
+    /** Instigator actor, the actor that owns the ability system component */
+    UPROPERTY()
+    TWeakObjectPtr<AActor> Instigator;
 
-	/** The physical actor that actually did the damage, can be a weapon or projectile */
-	UPROPERTY()
-	TWeakObjectPtr<AActor> EffectCauser;
+    /** The physical actor that actually did the damage, can be a weapon or projectile */
+    UPROPERTY()
+    TWeakObjectPtr<AActor> EffectCauser;
 
-	/** The ability CDO that is responsible for this effect context (replicated) */
-	UPROPERTY()
-	TWeakObjectPtr<UGameplayAbility> AbilityCDO;
+    /** The ability CDO that is responsible for this effect context (replicated) */
+    UPROPERTY()
+    TWeakObjectPtr<UGameplayAbility> AbilityCDO;
 
-	/** The ability instance that is responsible for this effect context (NOT replicated) */
-	UPROPERTY(NotReplicated)
-	TWeakObjectPtr<UGameplayAbility> AbilityInstanceNotReplicated;
+    /** The ability instance that is responsible for this effect context (NOT replicated) */
+    UPROPERTY(NotReplicated)
+    TWeakObjectPtr<UGameplayAbility> AbilityInstanceNotReplicated;
 
-	/** The level this was executed at */
-	UPROPERTY()
-	int32 AbilityLevel;
+    /** The level this was executed at */
+    UPROPERTY()
+    int32 AbilityLevel;
 
-	/** Object this effect was created from, can be an actor or static object. Useful to bind an effect to a gameplay object */
-	UPROPERTY()
-	TWeakObjectPtr<UObject> SourceObject;
+    /** Object this effect was created from, can be an actor or static object. Useful to bind an effect to a gameplay object */
+    UPROPERTY()
+    TWeakObjectPtr<UObject> SourceObject;
 
-	/** The ability system component that's bound to instigator */
-	UPROPERTY(NotReplicated)
-	TWeakObjectPtr<UAbilitySystemComponent> InstigatorAbilitySystemComponent;
+    /** The ability system component that's bound to instigator */
+    UPROPERTY(NotReplicated)
+    TWeakObjectPtr<UAbilitySystemComponent> InstigatorAbilitySystemComponent;
 
-	/** Actors referenced by this context */
-	UPROPERTY()
-	TArray<TWeakObjectPtr<AActor>> Actors;
+    /** Actors referenced by this context */
+    UPROPERTY()
+    TArray<TWeakObjectPtr<AActor>> Actors;
 
-	/** Trace information - may be nullptr in many cases */
-	TSharedPtr<FHitResult>	HitResult;
+    /** Trace information - may be nullptr in many cases */
+    TSharedPtr<FHitResult>    HitResult;
 
-	/** Stored origin, may be invalid if bHasWorldOrigin is false */
-	UPROPERTY()
-	FVector	WorldOrigin;
+    /** Stored origin, may be invalid if bHasWorldOrigin is false */
+    UPROPERTY()
+    FVector    WorldOrigin;
 
-	UPROPERTY()
-	uint8 bHasWorldOrigin:1;
+    UPROPERTY()
+    uint8 bHasWorldOrigin:1;
 
-	/** True if the SourceObject can be replicated. This bool is not replicated itself. */
-	UPROPERTY(NotReplicated)
-	uint8 bReplicateSourceObject:1;
-	
-	/** True if the Instigator can be replicated. This bool is not replicated itself. */
-	UPROPERTY(NotReplicated)	
-	uint8 bReplicateInstigator:1;
+    /** True if the SourceObject can be replicated. This bool is not replicated itself. */
+    UPROPERTY(NotReplicated)
+    uint8 bReplicateSourceObject:1;
 
-	/** True if the Instigator can be replicated. This bool is not replicated itself. */
-	UPROPERTY(NotReplicated)	
-	uint8 bReplicateEffectCauser:1;
+    /** True if the Instigator can be replicated. This bool is not replicated itself. */
+    UPROPERTY(NotReplicated)    
+    uint8 bReplicateInstigator:1;
+
+    /** True if the Instigator can be replicated. This bool is not replicated itself. */
+    UPROPERTY(NotReplicated)    
+    uint8 bReplicateEffectCauser:1;
 ```
 
 
@@ -1593,6 +1593,338 @@ curve让我们可以根据一个等级曲线来实现自己的效果
 以及preChange里clamp数值上下限。但我看他那意思好像要在post里改吗
 
 PostGEexecution  只要是通过GE数值变动 每一个都会走到这类来。其传入的DATA里有此次执行的全部所需数据。要啥拿啥
+
+
+
+# 第七章  gameplay tag GT
+
+## 概念
+
+![176f3b17-d8bb-4372-a121-201552879338](./images/176f3b17-d8bb-4372-a121-201552879338.png)
+
+
+
+GT 真的用处很多 可以用来做前置条件  和 各种组织条件
+
+![d1518be3-be2e-42bd-8c26-4a47920af356](./images/d1518be3-be2e-42bd-8c26-4a47920af356.png)
+
+
+
+## 在EDITOR创建GT
+
+在项目设置里就可以添加
+
+![54242dd1-b9dd-479d-a079-b6c61a9eb519](./images/54242dd1-b9dd-479d-a079-b6c61a9eb519.png)
+
+他创建了一个属性的标签   不是很清楚AS的标签有啥用 先创建把   然后其配置文件就是在config 文件夹里 
+
+![fdcb52b7-d49a-4829-94c2-dd8772bde2bb](./images/fdcb52b7-d49a-4829-94c2-dd8772bde2bb.png)
+
+
+
+## 使用数据表添加GT
+
+这种方法要好一点。因为可以随时进入那个表很方便的改
+
+![68b75a1d-643b-48ea-9730-5a14a1d06e35](./images/68b75a1d-643b-48ea-9730-5a14a1d06e35.png)
+
+![f53d69ed-491c-46d9-b4c3-b41b531843f5](./images/f53d69ed-491c-46d9-b4c3-b41b531843f5.png)
+
+然后就可以在这里编辑
+
+
+
+![de11fd5e-27e0-4b7b-adf3-44cc111b2e61](./images/de11fd5e-27e0-4b7b-adf3-44cc111b2e61.png)
+
+
+
+但是这回还不会生成GT 需要到项目设置里加入数组才行
+
+![3bcad868-ca2c-4f2c-bffa-1664085b14e9](./images/3bcad868-ca2c-4f2c-bffa-1664085b14e9.png)
+
+
+
+
+
+
+
+## 如何把GT加入ASC
+
+### 使用GE
+
+GE的tag 部分有很多 一个个来看一下
+
+#### GE自身持有的GT
+
+这个是GE本身自带的GT 其不会赋值给ASC    但是我看5.8好像都没有这个Tag页了     先看看视频的吧 。肯定是被放到其他的UI里去了
+
+然后这里分别指的就是combine tags即从GE父类继承来的tag   added 自己希望额外加入的tag   removed 希望移除父类的tag
+
+但是因为我们一般不会继承GE  所以这个没啥实际用处 了解就好
+
+![73e195d4-f7d0-4e46-966a-fa4ed29c4e74](./images/73e195d4-f7d0-4e46-966a-fa4ed29c4e74.png)
+
+5.8是在这里
+
+![1670ba00-b4bd-4287-9b39-56c53402077f](./images/1670ba00-b4bd-4287-9b39-56c53402077f.png)
+
+ 
+
+#### GE应用GT给ASC
+
+如何设置就会给ASC添加标签   注意 只有有持续时间的GE才能添加GT 因为在GE结束时 其GT也会一起被删除
+
+喔喔 他上面那个combine tags就是整合了 父类 ，然后自己的add 和remove 就是一个集成的作用 就是编译了之后在combine里面就是所有的效果
+
+然后在showdebug里面是可以看到tags的  还可以看到层级
+
+但是这里就算捡起来了多个GE 效果ACTOR还是只有一层tag  因为我们如果设置了堆叠·的话其实 他指的是游戏效果的可堆叠   
+
+但是如果设置GE为不可堆叠，那么他们本身都是单独的GE 就会有多层tag 
+
+![1234fb0c-06b7-4197-8dc7-1d452d1519dc](./images/1234fb0c-06b7-4197-8dc7-1d452d1519dc.png)
+
+![a9c8957b-0e57-4031-8387-572b9d646a05](./images/a9c8957b-0e57-4031-8387-572b9d646a05.png)
+
+在ASC源码里有这些委托  有空的话可以看ASC的源文件
+
+![54d92957-779e-47af-8da7-ac74eced6cba](./images/54d92957-779e-47af-8da7-ac74eced6cba.png)
+
+
+
+这甚至还有移除时的委托
+
+![b14a5785-2a11-4102-b04e-db62a38a0d4e](./images/b14a5785-2a11-4102-b04e-db62a38a0d4e.png)
+
+
+
+## 绑定GE应用时回调
+
+来看看执行了哪些GE
+
+![2bcffab8-3a60-463c-b032-4f9dd3286719](./images/2bcffab8-3a60-463c-b032-4f9dd3286719.png)
+
+这个第三个参数其实是apply时返回的那个句柄 可以用来取消效果来着
+
+直接写道ASC里面就可以
+
+然后触发时机还是和之前的init actor info一致
+
+
+
+介于enemy可能也会需要绑定一些委托 但是大家的不一样。所以可以在基类里写一个虚函数
+
+
+
+## 他想在HUD上以TAG来显示这些被施加了某种GE
+
+首先gespec是可以看到自己的Asset TAG的 
+
+他是从ASC里注册了第一层委托。然后自己建一个委托来广播所有遍历到的tag 
+
+然后widget controller里会绑定自己的回调去处理每一个tag   
+
+我其实在想为什么不直接用widget controller去绑定ASC的GE执行回调。  一个可能的解释是ASC里边还想处理些其他功能吧
+
+
+
+![ffc355ad-ae7b-47dd-af57-aec0122a7a72](./images/ffc355ad-ae7b-47dd-af57-aec0122a7a72.png)
+
+
+
+在widget controller里面注册了回调  使用的lamda 可以是可以 但是lamda匿名的话 很容易找不到数据流向我个人是不太喜欢
+
+![64e48db5-438c-4256-bf09-7999a6be0b39](./images/64e48db5-438c-4256-bf09-7999a6be0b39.png)
+
+
+
+### 定义data table来 自定义表结构
+
+用来显示怎么样的tag 需要显示什么样的数据
+
+![e3b07207-80e8-42c7-b2f5-b2f716db4963](./images/e3b07207-80e8-42c7-b2f5-b2f716db4963.png)
+
+
+
+然后就可以自建数据表了
+
+
+
+然后对应的道具也需要对应的tag 可以自己重新建一个可拾取道具的表
+
+然后他给加到成员变量里面 。。我说实话真神了，怎么都是倒着讲的，如果不知道全流程根本都不知道他一步步的意义是什么
+
+![4767125a-750f-463a-b2c4-f86fb6299f7b](./images/4767125a-750f-463a-b2c4-f86fb6299f7b.png)
+
+
+
+### 创建好之后，说是会根据tagname去查table的条例name
+
+所以 rowname 得和tagname一致
+
+![fa5a77fa-4b0c-400d-9428-1f1b1f267aef](./images/fa5a77fa-4b0c-400d-9428-1f1b1f267aef.png)
+
+
+
+然后记得得给ge加上对应的标签
+
+然后他做了一个模板函数用来返回指定的row类型的行 然后通过tagname查找
+
+![241a5526-ceb3-467b-9d4e-76ac2cc76fc2](./images/241a5526-ceb3-467b-9d4e-76ac2cc76fc2.png)
+
+
+
+### 创建view使用的委托
+
+在此之前，在从maessage table中找tag之前可以判断一下找的tag是不是message来优化一下性能
+
+
+
+![fa3587a6-8bb0-45c6-ab9c-a80c984e03a6](./images/fa3587a6-8bb0-45c6-ab9c-a80c984e03a6.png)
+
+
+
+### 挑战
+
+![f8788882-481a-47b0-9ca1-1251ef58c534](./images/f8788882-481a-47b0-9ca1-1251ef58c534.png)
+
+
+
+## 创建显示消息的widget组件
+
+UI布局大概是这样的  一个纵向布局  把text和image提升为变量了
+
+他是直接在overlay上创建了widget 。我可能会在某个地方再加一个专门用来放消息的widget  然后生成和消失吧。先把他要做的看完。我再自行发挥
+
+![d791615d-cc8e-4b39-9c67-4ea9f90b6158](./images/d791615d-cc8e-4b39-9c67-4ea9f90b6158.png)
+
+![391b4318-8b46-409e-921d-455fb6b41ead](./images/391b4318-8b46-409e-921d-455fb6b41ead.png)
+
+
+
+然后消失效果是做的widget animatiron来播放  
+
+我可能继承一个C++类来处理生成的组件移动 蓝图里做有点大分
+
+移动我自己处理。然后透明度倒是可以用动画来做
+
+
+
+## 挑战
+
+将widget controller中间广播数据变化的function改成lamda
+
+![25730869-2ffc-4986-b26b-29bb7624e587](./images/25730869-2ffc-4986-b26b-29bb7624e587.png)
+
+
+
+然后还修改了一下委托的类型。因为其实委托类型都是一模一样的，只是我们创建的变量不同而已
+
+![a6db7ad8-fbcb-47d1-8600-d7a7742be1a2](./images/a6db7ad8-fbcb-47d1-8600-d7a7742be1a2.png)
+
+
+
+## 挑战
+
+做一个ghost blobe
+
+看了下需求。感觉可以直接在基类上再叠一层就好。但是先做下消息显示和消失
+
+![141247d2-4cd4-4eb0-87f5-ac097f8729ba](./images/141247d2-4cd4-4eb0-87f5-ac097f8729ba.png)
+
+
+
+用蓝图做好折磨啊
+
+感觉蓝图智能做一些很简单的逻辑。比如说设置percent啥的。当然也有我不咋会用蓝图的原因。
+
+之前的游戏消息。我是搞了一个vertical的容器，将每一个消息widget塞进去了。然后在动画里设置透明度。动画播放完之后销毁
+
+
+
+然后这个挑战。我是直接在base里重叠了一个ghost 然后设置其tick 每次interp 
+
+
+
+
+
+## 正确的clamp数值
+
+没看懂是什么意思啊
+
+他这里在说什么PreAttributeChange是clamp了从modify获取的值??
+
+我得问问了
+
+这里好像都可以显示了。一个是
+
+![811d2eec-6163-4777-9311-d6a40b6bbda3](./images/811d2eec-6163-4777-9311-d6a40b6bbda3.png)
+
+
+
+
+
+## 第七章小结
+
+这一张主要是学习了GT 。了解了ASC GE 本身可以携带GT 并且GE其实可以给ASC赋予GT 。
+
+
+
+然后利用ASC的ApllyGEtoSelf委托来做了一个拾取道具显示信息的功能
+
+其重点包括数据的流向。由ASC产生并且筛选出需要显示的tag和文本。文本是从自定义的datatable里来的
+
+然后传给controller 传给widget完成UI的绘制
+
+
+
+还有一个gost globe的功能其实就是在原本的globe下再加了一层。然后使用tick来进行finterp 还是比较简单。
+
+这里教程没有讲清楚的坑就是baseValue和currentValue到底指的是什么以及pre和post两个函数究竟是怎么处理值的
+
+我在知识点补充补充了
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2109,14 +2441,15 @@ OnRep_PlayerState 触发时 PC 大概率已经存在
 但仍然说"不一定"，是因为：
 OnRep_Controller（Pawn 上的 Controller 指针被赋值）和 OnRep_PlayerState 的顺序没有严格保证——PC 对象本身存在，但 Pawn 的 Controller 指针不一定已经指向它了
 
-```
+
 
 ## HUD的初始顺序
 
 HUD是在pc 的beginplay里是初始化的 而且只在本地初始化  所以很早就准备就绪了。  在onrep里使用是没有问题的
 
-```
 
+
+```
 客户端时间线：
 
 [连接建立] → PC 创建
@@ -2131,14 +2464,17 @@ OnRep_PlayerState  ← 此时 HUD 早就存在了
 
 ```
 
+
+
 ## UCLASS()说明符无法被继承
 
 比如说我们在做UI的蓝图绑定委托的时候，是需要转换到具体的controller来绑定委托的   但是controller的子类都得自己写上标识符才行 无法继承父类的标识符
 
 ## 组件蓝图中的眼睛和isvariable
 
-```
 
+
+```
 准确的区分
 👁️ 小眼睛（Instance Editable）
 控制的是：能否在放置实例时，直接在 Details 面板里编辑这个变量的默认值
@@ -2151,15 +2487,15 @@ OnRep_PlayerState  ← 此时 HUD 早就存在了
 勾选后，你才能在 Event Graph 里 Get 到这个控件
 本类自身 和 子类 都能访问
 不勾选的话，这个控件只存在于 Designer 布局中，无法在任何蓝图逻辑中引用
-
 ```
+
+
 
 ## GE的堆叠策略是如何计算的
 
 
 
 ```
-
 你的理解非常准确。这正是 GAS 处理“多实例”与“单实例堆叠”的核心区别。为了让你彻底理清逻辑，我们可以把这两种情况拆解对比：
 
 情况 A：不开启堆叠（独立实例）
@@ -2197,6 +2533,112 @@ Never Reset（从不重置）：闹钟照常跑。不管你中间怎么加层数
 性能    较高（实例多）    较低（节省资源）
 结论：你的理解是正确的。开启堆叠后，数值确实是 层数 * 基础值，而时间的生命周期则完全交由 GE 蓝图中的 Stacking 策略 来定义。如果你希望模拟那种“每个 GE 独立计算时间，但数值叠加”的效果，通常会使用 Stack Expiration Policy 设置为 Remove Single Stack（到期只减一层，而不是全部消除）。
 
+
+
 ```
+
+
+
+
+
+## UE的广播策略
+
+默认是同步的，所以不需要担心局部变量的问题
+
+```
+2. 广播机制（同步 vs 异步）
+在 Unreal Engine 中，Broadcast 调用默认是同步（Synchronous）执行的。
+
+当执行 Broadcast(OutContainer) 时，程序会立即顺序执行所有绑定在该委托上的回调函数。
+
+在所有监听器执行完毕之前，CPU 不会返回这行代码的下一句。因此，在监听器函数执行的整个时间窗口内，OutContainer 都在栈上稳稳地存活着，数据完全有效。
+```
+
+## UE的widget的填充策略都有什么区别
+
+![faab5893-1bbf-4d64-ab4a-c96a1a222aaa](./images/faab5893-1bbf-4d64-ab4a-c96a1a222aaa.png)
+
+
+
+```
+在 Unreal Engine 的 UMG 设计器界面中，右上角的 填充模式（Fill Screen / Custom / Desired / Custom on Screen） 主要用于控制在编辑器内如何预览你的 UI 布局。
+
+这些设置仅影响编辑器内的预览效果，不会改变 Widget 在运行时的实际逻辑尺寸（运行时的尺寸由父容器的 Slot 属性或 DPI 缩放决定）。以下是各模式的详细区别：
+
+1. Fill Screen (填充屏幕)
+概念：模拟 Widget 占据整个玩家视口的状态。
+用途：最常用的模式，用于设计主菜单、HUD 等全屏显示的界面。
+特点：你会看到一个预设的分辨率边框（如 1920x1080）。在此模式下，你可以测试 Anchors (锚点)。当你手动拖动预览窗口大小时，Widget 会根据锚点设置自动偏移或拉伸，帮助你检查不同屏幕比例下的排版是否正常。
+2. Custom (自定义)
+概念：允许你手动输入具体的宽度和高度（以 Slate 单位为准）。
+用途：当你设计的是一个具有固定尺寸的组件（如一个特定大小的物品栏方块）时使用。
+特点：界面会根据你输入的数值强制显示一个矩形区域。这对于设计那些将来会被放入 Size Box 或具有固定尺寸要求的 UI 模块非常有用。
+3. Desired (所需尺寸)
+概念：预览区域的大小完全由 Widget 内部子控件的“理想大小”决定。
+用途：用于设计高度动态的组件，例如一个会根据文字长度自动伸缩的对话气泡。
+特点：预览窗口会自动紧贴你的内容边缘。如果你的内容增加（比如在 Text 控件里多打几个字），预览框会随之变大。它能让你直观看到这个组件“最自然”的状态。
+4. Custom on Screen (屏幕上的自定义)
+概念：这是 Fill Screen 和 Custom 的结合体。
+用途：用于预览一个小比例组件在全屏视口中占多少位置。
+特点：它会显示一个完整的全屏背景（通常是暗色的），并在其中间或指定位置显示你设置好的 Custom 尺寸区域。这有助于你感知一个小部件在整个游戏画面中的视觉比例。
+核心开发建议
+锚点测试：在 Fill Screen 模式下，务必利用左上角的 Screen Size 下拉菜单切换不同的设备（如 iPhone、Steam Deck、16:9 电脑显示器），观察界面是否发生重叠或超出屏幕。如果发生错误，应通过调整锚点或使用 Overlay/Grid Panel 来“消除”布局崩溃的风险。
+模块化设计：如果你在制作可复用的子部件（User Widget），建议切换到 Desired 模式。这样当你把这个子部件拖入主 HUD 时，它能正确地向父容器报告自己所需的空间。
+DPI 缩放：无论你在预览中看到的大小如何，记得在 Project Settings > User Interface > DPI Scaling 中检查缩放曲线，确保在高分辨率下 UI 不会变得过小。
+```
+
+
+
+## Attribute set中的CurrentValue 和Base Value的区别
+
+简单来说：baseValue是固定的数值。比如说升级+基础生命+instant效果（包含duration但是设置了周期的效果）一起加起来的值
+
+
+
+currentValue是infinite durtation但是没有设置周期的GE设置的效果。比如说生命值临时增加100 。这个效果其实是在AS里留下了一系列modifier即修改器
+我们最终看到的Value 都是base+modifier计算出来的
+
+
+
+既然instant作用于base我这里就有一个问题是
+
+那比如说一个将现有生命值乘以1.2的无限效果。base生命值为100、显示会有120.但是由于造成伤害是instant的，作用于base,那不是造成100点base伤害就变成了0*1.2 = 0导致角色死亡?  
+    实际上如果这个GE作用于Health那么确实会导致死亡。所以一般这种GE的会作用到Max上 对health上只应用instant的。然后最大生命值减少时对health做一下clamp就好让其不要超过最大值
+
+
+
+## PreAttributeChange和PostGameplayEffectExecute的区别
+
+
+
+在PreAttributeChange中我们修改Newvalue  这个value其实只会影响后续使用他的值。比如说数值变化的委托。但是对于basevalue的更改已经是应用了
+
+只是在UI看来没有超过100罢了。以及如果有人去读basevalue也会走到这里来导致其值为Max看起来没有问题
+
+但是只要一应用GE 就会发现没有在扣血，在扣除base超过上限的部分。
+
+可以理解为pre只是用来处理视觉效果的。没有实际修改值
+
+
+
+PostGameplayEffectExecute的话就是在GE实施之后实际上修改值的地方。可以使用Set修改base
+
+但是使用PostGameplayEffectExecute需要注意clampduration效果，会导致数值的问题。比如说生命值临时+50.现在是80 上限只能加到100。但是时效一结束会直接移除掉modifier即-50导致角色只有50血。所以对duration的clamp也要注意
+
+
+
+所以两个地方其实都要做clamp
+
+
+
+
+
+
+
+
+
+
+
+
 
 
