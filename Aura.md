@@ -1886,6 +1886,71 @@ UI布局大概是这样的  一个纵向布局  把text和image提升为变量�
 
 
 
+# 第八章
+
+## 从dataTable配置初始属性值
+
+创建了之前说的primaryValue 力量啥的
+
+然后ASC里有一个配置初始属性表的地方
+
+![4884bf44-c233-4cfb-8da8-c1ed680f3fa2](./images/4884bf44-c233-4cfb-8da8-c1ed680f3fa2.png)
+
+
+
+表需要正确的表头
+
+![995eff34-6b07-4eea-8ac5-8e142c32730e](./images/995eff34-6b07-4eea-8ac5-8e142c32730e.png)
+
+这里的rowName需要是属性集名称.属性名
+
+然后配置base属性就好
+
+其实这玩意暂时的唯一作用就是设置初始值。了解一下吧。我感觉是使用GE要好点
+
+![5f8786bb-b879-47e1-a4ee-b78c7d97c1af](./images/5f8786bb-b879-47e1-a4ee-b78c7d97c1af.png)
+
+
+
+## 通过ge来初始化属性
+
+在character里放一个uclass的ge 每个chracter可以有自己的初始化属性
+
+
+
+对于属性的操作其实只在服务器上做就可以了。之前为什么需要在客户都安onrep_里也进行相关操作呢
+
+因为那些是绑定委托。只有属性会网络复制。委托那些不会。所以一定是需要在客户端也做的。当然你在客户端设置属性也没问题。服务器会将其同步的
+
+
+
+## 基于属性值的modifier
+
+![d22199c0-03a0-4a5a-91db-513087867dae](./images/d22199c0-03a0-4a5a-91db-513087867dae.png)
+
+
+
+这里可以选择依赖的属性。并且选择来源是source还是target  然后snap关系到这个数值是何时确定，是应用是确定还是发出时确定。大概是这个意思
+
+![826e0ed1-a04e-4a0f-8468-23d80ce3c059](./images/826e0ed1-a04e-4a0f-8468-23d80ce3c059.png)
+
+
+
+默认情况下他会加直接把获取到的back属性作为操作数
+
+
+
+## 多个modifier之间的是实施顺序
+
+基本原则是每个modifierhi根据顺序来执行的
+
+![f84a47b2-2736-46df-8870-d65fb4b5753d](./images/f84a47b2-2736-46df-8870-d65fb4b5753d.png)
+
+
+
+
+
+![161068aa-068d-4e83-8b81-b95290206c41](./images/161068aa-068d-4e83-8b81-b95290206c41.png)
 
 
 
@@ -1893,6 +1958,222 @@ UI布局大概是这样的  一个纵向布局  把text和image提升为变量�
 
 
 
+![03a45f15-5d25-4352-a032-82099b631c22](./images/03a45f15-5d25-4352-a032-82099b631c22.png)
+
+
+
+![f93907cf-557f-47c8-b119-e569f0b806b7](./images/f93907cf-557f-47c8-b119-e569f0b806b7.png)
+
+## 修改系数
+
+因为之前都是直接操作那个系数。比如说+- *  那如果想要0.1 *  str呢就需要用到系数了
+
+![ecd8bc0b-bfab-4e46-a820-cf47743a2e87](./images/ecd8bc0b-bfab-4e46-a820-cf47743a2e87.png)
+
+
+
+是这样的。还挺好理解。比如说post值就可以理解为基础伤害   pre的值暂时没想到那里可用
+
+![4588c51e-4bc8-42a7-acd6-0976d163d489](./images/4588c51e-4bc8-42a7-acd6-0976d163d489.png)
+
+
+
+
+
+![d0101f29-6f65-4c9d-9562-69e0d18d8e3a](./images/d0101f29-6f65-4c9d-9562-69e0d18d8e3a.png)
+
+
+
+## 次要属性  部分或者全部依赖于其他属性
+
+我们的primary属性 作为游戏的基础属性，不会被其他属性影响。只会保持自己的独立。然后可以被游戏机制加减。
+
+然后secondary属性就是会依赖于primary属性表现出自己的值
+
+这些都是游戏设计者自己决定的
+
+
+
+所以其实和游戏进程更加直接相关的是secondary的属性值  
+
+比如说暴击率 伤害 格挡率  最大生命值，最大魔力
+
+他是这么设计的
+
+![3e66c847-516e-486e-8f3c-93cf3f0096cb](./images/3e66c847-516e-486e-8f3c-93cf3f0096cb.png)
+
+
+
+### 然后我设计的话
+
+primary 是
+
+| primary | secondary           | dependency |
+| ------- | ------------------- | ---------- |
+| str     | maxhealth           | str        |
+| int     | max mana            | int        |
+| luck    | phsical damage      | str        |
+| def     | magic damage        | int        |
+|         | critical chance     | luck       |
+|         | critical damage     | luck       |
+|         | health regeneration | str        |
+|         | mana regeneration   | int        |
+|         | block chance        | def        |
+
+
+
+### 挑战
+
+![7f79660c-fce5-4b76-a807-cb9cd2ee49bc](./images/7f79660c-fce5-4b76-a807-cb9cd2ee49bc.png)
+
+
+
+## 设置依赖属性
+
+即如果一个属性依赖于其他属性我希望这个属性能跟着被依赖属性一直变化
+
+实现方式就是在游戏开始时初始化属性的时候就为其加上一个infinite的ge  这样是加了一个modifier就可以实现一直数据变化了
+
+
+
+然后这个的原理其实就是之前提到的修改器。其不会tick执行什么的，只会在数值变换的时候进行修改
+
+
+
+然后再possessed调用就好
+
+
+
+### 挑战
+
+完善自己的secondary属性的初始GE和依赖关系
+
+![3b519d24-2a7f-4587-af6c-4d4b9dcd2252](./images/3b519d24-2a7f-4587-af6c-4d4b9dcd2252.png)
+
+但是这里要注意，对secondary应用的是inifiniteoverride会导致其不能加base属性。只能借由依赖属性来变化数值
+
+
+
+以及如果需要更加复杂的计算逻辑，比如说玩家所处的状态。那么就需要CMC 了 custom calculation class
+
+## Custom culculation   MMC
+
+
+
+比如说如果level不是一个属性，而是一个存在playerstate里的内容
+
+但是我们最好不要依赖于具体的playerstate   不然如果获取怪物的level就还得放在character里。所以可以实现这样一个接口，因为我们是知道ge的target和source的
+
+![94b3214f-d1e1-4260-b04e-7feb54676284](./images/94b3214f-d1e1-4260-b04e-7feb54676284.png)
+
+
+
+![ebbc131d-50d2-4d27-b1dd-dfe6774268d0](./images/ebbc131d-50d2-4d27-b1dd-dfe6774268d0.png)
+
+
+
+## 添加level 值player state 添加combat接口
+
+
+
+然后由于level是我们自己定义了。而且需要显示到UI，所以我觉得得在playerstate加个委托然后widget controller绑定然后变化的时候广播
+
+
+
+enemy有一点不同就是不用网络更新。只会在服务器上被设置
+
+然后enemy也是同样的，不过属性值放在了character类上
+
+
+
+接口实现可以放到character类上。放在都可以。反正GE触发时想要啥都能拿到
+
+
+
+## 创建MMC
+
+
+
+![e62f57f3-2d87-4ae6-9b86-ce2722a446b5](./images/e62f57f3-2d87-4ae6-9b86-ce2722a446b5.png)
+
+
+
+然后重写这个函数，其返回值应该是需要被应用的值
+
+![7cbb76bd-dffb-43e1-b424-eb744db89af3](./images/7cbb76bd-dffb-43e1-b424-eb744db89af3.png)
+
+说是还要捕获一下数值。不知道干嘛的先看   他在构造函数中声明了想要捕获的属性
+
+![748e4c85-e9a4-44ce-a9ef-cd14e88fa9f1](./images/748e4c85-e9a4-44ce-a9ef-cd14e88fa9f1.png)
+
+然后还要选择是获取目标的还是来源的。以及指定是否快照。 然后加入一个捕获数组。这么说是不是可以捕获多个属性
+
+![46ed826c-358d-49c7-9883-716dde0d187b](./images/46ed826c-358d-49c7-9883-716dde0d187b.png)
+
+
+
+不太理解他这个捕获tag的意义是何在![f10e6710-498d-4897-8b3e-30d1daf483f3](./images/f10e6710-498d-4897-8b3e-30d1daf483f3.png)
+
+
+
+### 快照
+
+我们可能实例化一个GE但是不马上应用他，比如说放到了一个火球术上。只有命中是才会应用。所以如果打开快照就会存储属性为创建的那一刻。否则是应用的时候现找
+
+
+
+然后这里的sourcetag就是 一定需要存在的tag和如果存在就不执行的tag 两边都是   记得给cONTEXT加上source再去找source
+
+
+
+**我知道了，因为之前这里这个标签应该是他自己捕获的，现在我们用自己的类了。也需要捕获标签来给他坐下判断**
+
+![b0fee12a-ebf8-4200-b44b-3eccc5203611](./images/b0fee12a-ebf8-4200-b44b-3eccc5203611.png)
+
+### 挑战
+
+根据level 和智力设置max mana
+
+![b697b976-9a0c-4f45-8d5a-e22397fdc8f3](./images/b697b976-9a0c-4f45-8d5a-e22397fdc8f3.png)
+
+
+
+## 如何初始化血量和mana为max
+
+因为max 依赖于其他属性。所以这里得看下咋搞
+
+果然，直接用GE在前面的实施完成之后再实施
+
+### 挑战
+
+![8fb0373b-82bb-4562-9aa1-278a4980da43](./images/8fb0373b-82bb-4562-9aa1-278a4980da43.png)
+
+
+
+
+
+## 第八章小结
+
+比较有意思的一章。主要是讲了如何初始化AS
+
+主要有三种方式
+
+1 使用dataTable  目前仅能用来设置初始值。效果一般
+
+2 使用GE 对于基础数值和vital数值可以使用instant但是对于依赖于其他的数值就需要使用infinite了
+
+3 使用MMC进行计算。因为如果需要计算一个非属性值因素或者依赖于多个来源。那么普通的GE就比较难做了。用MMC可以自己设定计算公式
+
+
+
+还添加了combat接口，以后所有的战斗内容都可以从接口里获取
+
+
+
+中途由于添加属性那里。实在不想手写。去研究了一下接入Rider接入agent  
+然后又去看了一下反射相关的内容耽误了一天半 ，现在继续
+
+lua那些脚本语言，先等重要的核心都学完之后再搞吧，反正挺快的
 
 
 
@@ -2631,6 +2912,148 @@ PostGameplayEffectExecute的话就是在GE实施之后实际上修改值的地�
 
 
 
+### 然后我又发现一些奇奇怪怪的BUG
+
+比如说 如果我+100的duration 然后+X的instant duration就不会消失了
+
+又或者+duration 持续时间内-1instant 会马上加到100  好神秘啊
+
+
+
+感觉是这里的问题啊。宏的问题。get宏获取的是current但是set的时候是设置的base
+
+这里可以看出拿的是current设的是base。在duration存在的期间那不就是把duration设置成base了  这里是一点。
+
+还有是post只会在instant里面改base的时候触发
+
+
+
+这里的注释写的很清楚了，只会在修改base时调用，不会在duration被调用  这两都是
+
+![d112ad4c-edc8-4725-a590-524cfa4cecd4](./images/d112ad4c-edc8-4725-a590-524cfa4cecd4.png)
+
+```
+#define GAMEPLAYATTRIBUTE_VALUE_GETTER(PropertyName) \
+    inline float Get##PropertyName() const \
+    { \
+        return PropertyName.GetCurrentValue(); \
+    }
+
+#define GAMEPLAYATTRIBUTE_VALUE_SETTER(PropertyName) \
+    inline void Set##PropertyName(float NewVal) \
+    { \
+        UAbilitySystemComponent* AbilityComp = GetOwningAbilitySystemComponent(); \
+        if (ensure(AbilityComp)) \
+        { \
+            AbilityComp->SetNumericAttributeBase(Get##PropertyName##Attribute(), NewVal); \
+        }; \
+    }
+```
+
+所以结合起来来看。可知。post和pre里面其实就只会处理health 那你额外加的health其实就不在限制范围内了。就我们应该只管base的值有没有超过max
+
+所以这里不能用get来获取，这样会获取到 current
+
+那么数据流向就是这样的 15base开局 + 50dura  此时不会触发post/pre 走到火上去开始扣血 然后再post里设置base为了64 那么此时和dura的buff一加就变成了 64 + 50 = 114 然后显示为100 
+
+另一种情况+100的dura 然后+1instant 此时超过界限设置了base = 100此时 就算dura没了。那base也确实还是100
+
+
+
+另一种情况 85  开局 +50dura 因为dura没有参与post/pre此时其实没有限制上限。 所以现在其实是85+50 = 135 然后结束后扣回85   
+
+这一下就说通了都   但是怎么解决呢。不可能不要dura了吧  目前没有想到好的办法。看下后续他设计数值的时候怎么操作吧
+
+
+
+### 问了下AI说像lyra这种都是使用的元属性
+
+嗯后面学lyra的时候再看吧。知道现在这些BUG是这样产生的就好
+
+```
+终极解决方案”：元属性模式
+既然你已经推理出了“不要直接操作 Health”的结论，那么解决这个问题的工业级做法就是 “引入元属性 (Meta Attributes)”。
+
+在成熟的 GAS 项目（如 Lyra）中，Health 属性是不允许被 GE 直接修改的。所有的 GE 都修改 Damage 或 Healing。
+
+第一步：定义元属性
+在 .h 中增加两个不复制的属性：
+
+C++
+UPROPERTY()
+FGameplayAttributeData Damage; // 仅作为伤害载体
+ATTRIBUTE_ACCESSORS(UAuraAttributeSet, Damage)
+
+UPROPERTY()
+FGameplayAttributeData Healing; 
+ATTRIBUTE_ACCESSORS(UAuraAttributeSet, Healing)
+
+第二步：在 PostExecute 中手动“分账”
+
+这是你大展拳脚的地方。在这里，你可以写逻辑让“临时加成”变得有意义。
+
+void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data)
+{
+    // 情况 A：处理伤害
+    if (Data.EvaluatedData.Attribute == GetDamageAttribute())
+    {
+        float LocalDamage = GetDamage();
+        SetDamage(0.f); // 立即归零，因为它只是个传声筒
+
+        if (LocalDamage > 0.f)
+        {
+            // 这里你可以决定：是看 CurrentHealth 还是 BaseHealth
+            // 关键：为了让 Dura Buff 挡刀，我们看 CurrentValue
+            const float CurrentH = GetHealth(); 
+            const float BaseH = Health.GetBaseValue();
+
+            // 如果当前总血量（含Buff）够扣
+            // 我们允许 BaseValue 变负！(这是 GAS 处理临时血量消耗的秘诀)
+            const float NewBase = BaseH - LocalDamage;
+
+            // 使用 SetBaseValue 物理写入，绝不使用 SetHealth 宏
+            Health.SetBaseValue(NewBase);
+            // 手动同步 Current，此时 Current = NewBase + Modifiers
+            Health.SetCurrentValue(NewBase + (GetHealth() - GetHealthAttribute().GetNumericValue(this)));
+        }
+    }
+
+    // 情况 B：处理治疗（这就解决了你“加不上血”的问题）
+    if (Data.EvaluatedData.Attribute == GetHealingAttribute())
+    {
+        float LocalHealing = GetHealing();
+        SetHealing(0.f);
+
+        if (LocalHealing > 0.f)
+        {
+            float NewBase = Health.GetBaseValue() + LocalHealing;
+            float MaxH = GetMaxHealth();
+
+            // 物理限制 Base 不超过 Max，这样无论你有多少 Buff，你的底账永远干净
+            NewBase = FMath::Clamp(NewBase, 0.f, MaxH);
+
+            Health.SetBaseValue(NewBase);
+        }
+    }
+}
+
+4. 为什么这个办法解决了你的所有困扰？
+
+1. **Dura Buff 终于能挡刀了**：当你有 15 Base 和 50 Dura 时，受到 30 伤害。Base 变成 -15，但 Current 依然是 `(-15) + 50 = 35`。你活了下来！
+2. **不再跳血变 100**：因为治疗（Healing）现在是直接操作 `SetBaseValue` 的，它完全不理会当前有没有 +50 的 Buff。你加了 20 血，Base 就变成 35，Buff 结束后你还是 35。
+3. **上限判定变准了**：你只管 BaseValue 有没有超过 100。Buff 提供的额外 50 点是“溢出部分”，它会在 UI 上显示为 135/100（或者你可以在 UI 逻辑里 Clamp 它），但在逻辑底层，你的账本是清爽的。
+
+### 总结
+
+你之前的无语是因为你试图在 **“结算层 (Execute)”** 用 **“表现层 (Current/Set宏)”** 的逻辑去补救。**GAS 的高手从不直接 `SetHealth`。** 他们通过 `Damage` 元属性在 C++ 里手动做减法，这样既保住了 BaseValue 的尊严，也让 Duration Buff 真正成了“救命稻草”。第二步：在 PostExecute 中手动“分账”这是你大展拳脚的地方。在这里，你可以写逻辑让“临时加成”变得有意义。
+
+C++void UAuraAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data){ // 情况 A：处理伤害 if (Data.EvaluatedData.Attribute == GetDamageAttribute()) { float LocalDamage = GetDamage(); SetDamage(0.f); if (LocalDamage > 0.f) { const float CurrentH = GetHealth(); // 含 Buff 的总血量 const float BaseH = Health.GetBaseValue(); // 关键：允许 BaseValue 变负！(这是 GAS 处理临时血量消耗的秘诀) const float NewBase = BaseH - LocalDamage; // 使用 SetBaseValue 物理写入，绝不使用 SetHealth 宏 Health.SetBaseValue(NewBase); // 手动同步 Current，此时 Current = NewBase + Modifiers Health.SetCurrentValue(NewBase + (GetHealth() - GetHealthAttribute().GetNumericValue(this))); // 只有当 CurrentValue（含 Buff）都小于 0 时，才判定消除 (Elimination) if (Health.GetCurrentValue() <= 0.f) { /* 执行消除逻辑 */ } } } // 情况 B：处理治疗 if (Data.EvaluatedData.Attribute == GetHealingAttribute()) { float LocalHealing = GetHealing(); SetHealing(0.f); if (LocalHealing > 0.f) { float NewBase = Health.GetBaseValue() + LocalHealing; float MaxH = GetMaxHealth(); // 物理限制 Base 不超过 Max，这样无论你有多少 Buff，你的底账永远干净 NewBase = FMath::Clamp(NewBase, -MaxH, MaxH); // 允许负值，但封顶 Max Health.SetBaseValue(NewBase); Health.SetCurrentValue(NewBase + (GetHealth() - GetHealthAttribute().GetNumericValue(this))); } }
+
+}
+4. 为什么这个办法解决了你的所有困扰？Dura Buff 终于能挡刀了： 当你有 15 Base 和 50 Dura 时，受到 30 伤害。Base 变成 -15，但 Current 依然是 (-15) + 50 = 35。你活了下来！不再跳血变 100： 因为治疗（Healing）现在是直接操作 SetBaseValue 的，它完全不理会当前有没有 +50 的 Buff。你加了 20 血，Base 就从 -15 变成 5，Buff 结束后你还是 5。上限判定变准了： 你只管 BaseValue 有没有超过 100。Buff 提供的额外 50 点是“溢出部分”，它会在 UI 上显示为 135/100，但在逻辑底层，你的账本是清爽的。一句话总结： 你之前的痛苦是因为你在 “结算层 (Execute)” 用了 “表现层 (SetHealth 宏)” 的逻辑。通过 Damage 元属性手动操作 SetBaseValue，你就能完美驾驭这套系统。
+
+
+```
 
 
 
@@ -2642,3 +3065,36 @@ PostGameplayEffectExecute的话就是在GE实施之后实际上修改值的地�
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--
