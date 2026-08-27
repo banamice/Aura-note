@@ -2106,7 +2106,7 @@ enemy有一点不同就是不用网络更新。只会在服务器上被设置
 
 ![748e4c85-e9a4-44ce-a9ef-cd14e88fa9f1](./images/748e4c85-e9a4-44ce-a9ef-cd14e88fa9f1.png)
 
-然后还要选择是获取目标的还是来源的。以及指定是否快照。 然后加入一个捕获数组。这么说是不是可以捕获多个属性
+然后还要选择是获取目标的还是来源的。以及指定是否快照。 然后加入一个捕获数组。这么说是不是可以捕获多个属性  是的，可以。不过每一个都要像第一个属性一样用一个变量来装
 
 ![46ed826c-358d-49c7-9883-716dde0d187b](./images/46ed826c-358d-49c7-9883-716dde0d187b.png)
 
@@ -2174,6 +2174,292 @@ enemy有一点不同就是不用网络更新。只会在服务器上被设置
 然后又去看了一下反射相关的内容耽误了一天半 ，现在继续
 
 lua那些脚本语言，先等重要的核心都学完之后再搞吧，反正挺快的
+
+
+
+
+
+# 第九章
+
+## 属性值菜单
+
+
+
+![ab498334-8e6a-447b-99d3-9fc804cd4d06](./images/ab498334-8e6a-447b-99d3-9fc804cd4d06.png)
+
+### 然后就是做UI环节。跟着做就好
+
+有一个namedSlot的空间。跟占位符的感觉差不多
+
+如果继承了有namedslot的组件可以放自己的widget进去并且不破坏原有布局
+
+![7ebd7b56-b57e-44a9-a29e-13113b4cd629](./images/7ebd7b56-b57e-44a9-a29e-13113b4cd629.png)
+
+
+
+然后设置按钮的时候记得设置一下按下，悬浮，disable的几种样式
+
+
+
+### 使用wrap box可以将组件一行行的排列
+
+虽然我其实在想为什么不用vertical box
+
+
+
+### 使用scroll box来做滚动框但是BOX需要被sizebox包裹，才知道自己的范围
+
+超过划定的范围之后就会出现滚动条
+
+### 如何在自定义button的内部设置onclied 并且让外部组件知道自己点击了
+
+使用事件分发器 其实就是蓝图版的委托
+
+![9ec7f6c1-5f71-4ca6-aec7-0823a4503c80](./images/9ec7f6c1-5f71-4ca6-aec7-0823a4503c80.png)
+
+然后再外部本身也是依赖于内部的小组件。只是这样使用委托就是单项依赖而已  然后转化一下类型。来绑定委托
+
+![f2fd7b02-7fb7-47a5-93e6-4085658ea08e](./images/f2fd7b02-7fb7-47a5-93e6-4085658ea08e.png)
+
+
+
+### text有时候会阻挡button的点击
+
+需要设置一下text
+
+可见，但是不参与击中测试
+
+![7156712b-87c7-4d3a-a1cc-4e599712c535](./images/7156712b-87c7-4d3a-a1cc-4e599712c535.png)
+
+
+
+
+
+## 绑定属性值更新
+
+首先是需要创建对应widget的对应controller然后使用一个委托的方式广播所有的属性变化。这样之后加属性就只用修改UI和dat asset就好
+
+他好像是根据tag来进行联系的
+
+![b2ea9fdd-80c0-461d-9960-412ced9bf4d6](./images/b2ea9fdd-80c0-461d-9960-412ced9bf4d6.png)
+
+
+
+![3b2a47ad-dfbf-4d4a-8e5b-7d6fe8558805](./images/3b2a47ad-dfbf-4d4a-8e5b-7d6fe8558805.png)
+
+
+
+![2f16156d-0870-463e-941d-adbf124200af](./images/2f16156d-0870-463e-941d-adbf124200af.png)
+
+
+
+## 创建native gt
+
+使用自己的单例，模式来添加了tag和GAS速成里边还不太一样。那边是通过namespace然后配合宏直接定义的
+
+
+
+![71fcb0bd-553c-49a9-a2fa-3f9a74e6aa06](./images/71fcb0bd-553c-49a9-a2fa-3f9a74e6aa06.png)
+
+![bbffeb54-c8d9-48be-b831-fb36fd3d41bf](./images/bbffeb54-c8d9-48be-b831-fb36fd3d41bf.png)
+
+然后使用的话就需要我们创建一个FGamepolaytag变量 然后赋值
+
+![2e7f4db8-fd78-424b-b67c-c3938b13bd61](./images/2e7f4db8-fd78-424b-b67c-c3938b13bd61.png)
+
+之后就可以使用他了
+
+
+
+## 添加asset Manager 单例 来管理自己资源的加载
+
+![6b73e683-00db-418f-a2a6-444124c8f983](./images/6b73e683-00db-418f-a2a6-444124c8f983.png)
+
+
+
+创建一个自己的单例类 然后重写游戏初始化虚函数
+
+然后我们将自己的这个manager类设置为游戏的manager类
+
+![45e7adbb-0962-4842-a8af-b7f1cf8efb8e](./images/45e7adbb-0962-4842-a8af-b7f1cf8efb8e.png)
+
+指定Assetmanager的话需要配置配置文件，注意这里是项目名.类名
+
+![0118e528-e780-40dc-bfd3-5ad40f3b96a4](./images/0118e528-e780-40dc-bfd3-5ad40f3b96a4.png)
+
+### 挑战
+
+创建所有的属性原生标签
+
+![e261466d-e0db-4d48-a6da-c65f911c7e68](./images/e261466d-e0db-4d48-a6da-c65f911c7e68.png)
+
+
+
+
+
+
+
+## 创建自定义AssetData结构体  然后创建AssetData
+
+![e56a7af0-bfbf-4d68-a6a5-1e5cb4a4fa6f](./images/e56a7af0-bfbf-4d68-a6a5-1e5cb4a4fa6f.png)
+
+
+
+![2b3fd554-09f8-4f3d-99d0-e0bc01a8ff95](./images/2b3fd554-09f8-4f3d-99d0-e0bc01a8ff95.png)
+
+
+
+![d61f197d-3c2b-4d2c-bf9b-db07b531ee0f](./images/d61f197d-3c2b-4d2c-bf9b-db07b531ee0f.png)
+
+![beaa5b50-03dc-41e0-bd8d-520c87426f54](./images/beaa5b50-03dc-41e0-bd8d-520c87426f54.png)
+
+然后创建蓝图实例 在蓝图中直接编辑对应的结构体
+
+
+
+## 创建widgetController
+
+### 挑战
+
+先自己创建widgetcontroller
+
+![8301d893-4a75-43b4-b0b4-f0f03db21c18](./images/8301d893-4a75-43b4-b0b4-f0f03db21c18.png)
+
+
+
+## 制作蓝图函数库  方便widget可以直接拿到controller而不用接HUD然后再找
+
+![5acaee04-ab44-4db6-847a-d18d22f95cf0](./images/5acaee04-ab44-4db6-847a-d18d22f95cf0.png)
+
+然后其中的函数都是static的，并且需要一个世界上下文对象。因为无法获取到World。都没有this指针
+
+![e9c0e754-2466-4036-a87d-5e661ee84fad](./images/e9c0e754-2466-4036-a87d-5e661ee84fad.png)
+
+
+
+## 挑战
+
+创建新的函数获取asController
+
+![b7236a35-e906-47b1-9884-98c22493b0df](./images/b7236a35-e906-47b1-9884-98c22493b0df.png)
+
+
+
+注意，对于controller会用到的dataAsset是应该使用subclassof还是指针。主要是
+
+关键区别在于你创建的是“DataAsset 对象资产”还是“继承自 DataAsset 的蓝图类”。  比如说dataTable DtatAsset这里。你创建的时候他都是让你选了类型的。其实就是创建了一个实际的对象而不是类型
+
+
+
+## 为每个widget分配tag这样他们就知道自己应该匹配广播出来的哪一个数值
+
+我怎么感觉可以再widgetbase上加上这个tag呢   是可以。但是对于那些纯文本的内容来说就多余了
+
+还是从需要的基类里加吧
+
+
+
+## 然后在AS中将属性值tag和gameplayAttribute绑定了起来
+
+这样就可以通过轮询的方式将每一个属性的变化委托所绑定
+
+
+
+然后通过tag找到对应的dataAsset里存储的信息  
+
+最后通过attribute获取当前值
+
+
+
+## 第九章小结
+
+第九章主要是完成了属性值UI的制作
+
+学习了nativeTag的增加，其主要就是GameplayManager.addNativetag
+
+其中设置到了使用data table以及dataAsset来存储一些会经常修改的内容  自定义结构体内容
+
+创建了新的controller其负责批量监听AS中的属性  ，依赖于AS构造函数中初始化tag以及attribute。相当于模板代码多了一步骤
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
