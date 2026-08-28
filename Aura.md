@@ -2383,61 +2383,203 @@ lua那些脚本语言，先等重要的核心都学完之后再搞吧，反正�
 
 
 
+# 第十章
+
+## GAS ABILITY
+
+
+
+![97921f55-120e-47f1-bfb1-fcd5211859bf](./images/97921f55-120e-47f1-bfb1-fcd5211859bf.png)
+
+![2a92f93a-ce19-4a5c-ab8c-9b57c4ae95d6](./images/2a92f93a-ce19-4a5c-ab8c-9b57c4ae95d6.png)
+
+![db6b6e0a-2cc5-4385-8c8f-844358694b2e](./images/db6b6e0a-2cc5-4385-8c8f-844358694b2e.png)
+
+![5e53bd72-73f5-4a34-8472-b906ddd6c570](./images/5e53bd72-73f5-4a34-8472-b906ddd6c570.png)
+
+![1bfb31de-80e1-4061-8dc5-53503cf3c326](./images/1bfb31de-80e1-4061-8dc5-53503cf3c326.png)
 
 
 
 
 
+## 添加初始能力数组并且添加能力
+
+在character上添加初始能力数组比较合理
+
+然后交给ASC添加能力s
+
+
+
+![6d3f304e-d4ab-4e64-bb1a-b75b82d8f2c1](./images/6d3f304e-d4ab-4e64-bb1a-b75b82d8f2c1.png)
+
+
+
+## GA介绍
+
+![a3a7cbc1-ecd3-48e0-87f1-f0eff0212010](./images/a3a7cbc1-ecd3-48e0-87f1-f0eff0212010.png)
+
+![cc98263a-1dfd-4884-bb81-db345a153334](./images/cc98263a-1dfd-4884-bb81-db345a153334.png)
+
+![8e733cc7-95a5-44a1-b807-c4b1b6422e8f](./images/8e733cc7-95a5-44a1-b807-c4b1b6422e8f.png)
+
+![53cce454-4295-4def-b65a-56e0cf7ee0cf](./images/53cce454-4295-4def-b65a-56e0cf7ee0cf.png)
 
 
 
 
 
+## 通过输入来激活能力   制作能力对应按键和tag的dataAsset
+
+
+
+![a53d1b77-3171-4573-b9d8-a863baa7dbf4](./images/a53d1b77-3171-4573-b9d8-a863baa7dbf4.png)
+
+
+
+创建一下自定义的DataAsset类。然后创建对应的IA和绑定到context
+
+
+
+## 创建自定义InputComponent
+
+我们可以修改项目配置来设置自己的inpitcomponent  即pl;ayercontroller默认的input
+
+然后可以自己实现一下为所有输入绑定同样的按下，按住，松开函数。不过传入参数里会多加一个和ia绑定的 tag
+
+这样每次对应的IA触发时，在回调函数里都可以收到tag来让ASC激活对应的能力
+
+
+
+然后再运行中，就可以修改GA所带的asset tag可以任意修改为对应的输入tag
+
+
+
+然后由playercontroller传入DA 和绑定三个回调函数
+
+这里可以修改使用的inputComponent
+
+![ce752c70-cd22-441e-a685-65f2bec15330](./images/ce752c70-cd22-441e-a685-65f2bec15330.png)
+
+![a68d3a0b-019d-4be0-9c83-f65cb2819ace](./images/a68d3a0b-019d-4be0-9c83-f65cb2819ace.png)
+
+![a180ab46-a589-4754-ab93-51fa79a6dceb](./images/a180ab46-a589-4754-ab93-51fa79a6dceb.png)
+
+
+
+## 为GA添加input 标签
+
+总体思路为在controller回调获取到按下的按键tag  。然后交由ASC查询可激活的能力，看这些能力的dynamic tags是否由完全匹配的tag然后判断是否激活然后激活
+
+每个能力在被spec 化赋予的时候都要在dynamic里加一下对应在GA里的类成员tag。我感觉这个其实可以做成默认按键比如说datatAsset然后到时候改按键也可以改文件。文件的类型就是uclass+tag 一边能力类一边tag
 
 
 
 
 
+但是这里需要注意GA本体需要实例化，所以类上存储的时默认的初始映射。然后再实例化，即生成spec之后会有tag容器。在那里面设置触发tag
+
+![2455f80e-7f59-48c7-9812-3f980e0563ed](./images/2455f80e-7f59-48c7-9812-3f980e0563ed.png)
 
 
 
 
 
+每一个GA都溜了inputPress和release的虚函数，对应的逻辑可以写在虚函数里
+
+然后这里的specInputPressed就会去标记一下bool标识符，对应是否按下。然后去调用对应的pressed函数
+
+![c61deeb2-dca7-4779-81f5-3dbddf9e5df7](./images/c61deeb2-dca7-4779-81f5-3dbddf9e5df7.png)
 
 
 
+## 点击移动
+
+在顶视角模板中在客户都安短按移动时使用了AI寻路，但是AI寻路只能在服务器使用，客户端用的话是没有效果的。我猜是被服务器修正了
+
+![289e3a8d-e75f-423a-9fe5-2c30923900e9](./images/289e3a8d-e75f-423a-9fe5-2c30923900e9.png)
 
 
 
+右键除了要用来移动之外，还需要能够触发ABILITY，之前做的判断是否为enemy接口就派上用场了.还需要再搞一个变量判断是攻击还是移动
 
 
 
+![0157c8d8-d994-4387-b8bc-89e863bc3983](./images/0157c8d8-d994-4387-b8bc-89e863bc3983.png)
+
+### 添加短按自动寻路
+
+记得开启客户端自动寻路
+
+![1aeeeef6-e85f-4262-9928-b0062de18ba5](./images/1aeeeef6-e85f-4262-9928-b0062de18ba5.png)
+
+添加AI寻路需要加入moudle
+
+以及用AI，AI导航网格更是必要的  按P可以显示和取消网格
+
+![2aefb824-71cf-4fe3-874a-74d68f0d975f](./images/2aefb824-71cf-4fe3-874a-74d68f0d975f.png)
+
+![76696e0b-de2f-4db6-91c1-38fd253737df](./images/76696e0b-de2f-4db6-91c1-38fd253737df.png)
 
 
 
+将网格加入平滑组件
+
+然后再tick根据是否在自动寻路来决定是否移动
+
+![e82a2335-6bd7-457c-ac59-b393070d8b5b](./images/e82a2335-6bd7-457c-ac59-b393070d8b5b.png)
 
 
 
+这里由几个BUG需要注意一下。
+
+1 如果cursor点击的是一个物体，那么其会没有目标点 会导致未定义行为。可以把障碍物调整为不阻挡visibility这样就会直接点击到背后的地面
+
+2 如果点击的是nav网格的无法到达的区域。会导致永远无法完成接触。所以需要将导航产生的路径点的最后一个点作为目标点
+
+![ba849ac4-8eab-4b1f-bdb1-42a9948c6385](./images/ba849ac4-8eab-4b1f-bdb1-42a9948c6385.png)
 
 
 
+然后还有BUG就是由于是按照曲线切线方向在走在弧度比较大的拐弯容易会出现按照切线走下去离终点距离大于最小距离的情况。这点不太影响。把停止距离调大点就好了所以我还是觉得直接移动到目标点就好了
 
 
 
+### 补充  为什么客户端没有拾取物品信息
+
+因为ASC的应用GE到自身的delegate只会在服务器上被执行
+
+解决方法就是把绑定到服务器上的哪个回调改成clientRPC这样每个客户端就能够正确的收到了
+
+## 射弹
+
+就是添加prjectileMovement和碰撞体这些
 
 
 
+## 创建新的能力，并且重写activeAbility函数 在其中生成投射物
+
+设置投射物本身为可复制并且设置移动可复制，这样可以在多人游戏中看到投射物
+
+并且让这个被激活时只能服务器生成投射物
 
 
 
+然后通过combat接口返回生成spawn的位置
 
+![2cd59bc2-19ab-4bf8-aa1a-37573a56e006](./images/2cd59bc2-19ab-4bf8-aa1a-37573a56e006.png)
 
+## 第十章小结
 
+这一章主要是
 
+1 基础了解了GA的一些配置
 
+2 通过dataAsset将ia和GT绑定。当IA触发回调时会固定的传入配置的tag，此时可以通过tag来激活对应tag的ga   使用tag完成了输入绑定的解耦，只要修改GASpec对应的tag就能做到触发不同的能力
 
+3 完成了自动寻路，注意这里客户端需要开启项目设置的允许客户端寻路才能在客户端使用ai寻路找到目标路径
 
-
+4 完成了基础的spawnActor还需要 为其设置对应的旋转和配置GE
 
 
 
